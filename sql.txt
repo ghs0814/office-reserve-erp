@@ -23,21 +23,20 @@ CREATE TABLE RESERVATION (
 -- 4. 변경사항을 DB에 완전히 적용
 COMMIT;
 
-## 2. DB 생성 후 최종 테스트 진행
-테이블과 시퀀스가 성공적으로 만들어졌다면, 다시 이클립스로 돌아와서 다음 순서로 최종 테스트를 해보시면 됩니다.
 
-톰캣 서버를 완전히 껐다가 다시 켭니다.
+-- 1. 오피스 정보 테이블 생성
+CREATE TABLE ROOM (
+    ROOM_CODE VARCHAR2(50) PRIMARY KEY,    -- 방 코드 (예: 401, 402)
+    ROOM_NAME VARCHAR2(100) NOT NULL,      -- 방 이름 (예: 대회의실)
+    CAPACITY NUMBER DEFAULT 0,             -- 수용 인원
+    HAS_BEAM CHAR(1) DEFAULT 'N',          -- 빔 프로젝터 유무 (Y 또는 N)
+    DESCRIPTION VARCHAR2(500)              -- 방 상세 설명
+);
 
-로그인 화면부터 진입하여 방을 하나 선택하고 예약을 진행합니다.
+-- 2. 테스트용 방 데이터 3개 넣기
+INSERT INTO ROOM VALUES ('401', '대회의실', 12, 'Y', '임원 회의 및 대규모 부서 회의에 적합한 공간입니다. (화이트보드 포함)');
+INSERT INTO ROOM VALUES ('402', '중회의실', 6, 'Y', '일반 팀 주간 회의용 공간입니다.');
+INSERT INTO ROOM VALUES ('403', '소회의실', 4, 'N', '간단한 미팅 및 1:1 면접용 공간입니다.');
 
-콘솔 에러 없이 '성공적으로 완료되었습니다' 팝업이 뜨는지 확인합니다.
-
-내 예약 조회 화면에 가서 방금 한 예약이 잘 뜨는지, 그리고 취소 버튼을 눌렀을 때 상태가 '취소됨'으로 잘 변하는지 확인합니다.
-
-## 3. 잊지 말아야 할 안전 저장 (Git Commit)
-DB 세팅에 들어가기 전에, 지금까지 완벽하게 완성한 취소 기능과 DB 연동 코드를 깃에 저장해서 날아가지 않도록 박제해 둡니다.
-
-Bash
-git add .
-git commit -m "2026-04-30: 내 예약 조회(SELECT) 및 예약 취소(UPDATE) DB 연동 완료"
-git push origin dev-ghs
+-- 3. 저장
+COMMIT;

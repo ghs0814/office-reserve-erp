@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.office.dto.EmployeeDTO" %>
+<%@ page import="com.office.dto.RoomDTO" %>
 <%
     EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
     if (loginEmp == null) {
@@ -7,9 +8,10 @@
         return;
     }
 
-    String roomId = (String) request.getAttribute("selectedRoomId");
+    // 기존의 단순 String 대신 RoomDTO 객체를 받아옵니다.
+    RoomDTO roomInfo = (RoomDTO) request.getAttribute("roomInfo");
     
-    if (roomId == null || roomId.trim().isEmpty()) {
+    if (roomInfo == null) {
         response.sendRedirect("main.jsp");
         return;
     }
@@ -145,12 +147,24 @@
 
 <div class="reserve-container">
     <h2>회의실 예약 신청</h2>
-    <span class="room-badge">[ <%= roomId %> ]</span>
-    
+    <span class="room-badge">[ <%= roomInfo.getRoomId() %> ]</span>
+    <!-- DB에서 불러온 방 상세 정보 출력 영역 -->
+    <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+        <h3 style="margin: 0 0 10px 0; color: #1976d2;">
+            [ <%= roomInfo.getRoomId() %>호 ] <%= roomInfo.getRoomName() %>
+        </h3>
+        <p style="margin: 5px 0; font-size: 14px; color: #555;">
+            <b>수용 인원:</b> 최대 <%= roomInfo.getCapacity() %>명 | 
+            <b>빔 프로젝터:</b> <%= "Y".equals(roomInfo.getHasBeam()) ? "있음 O" : "없음 X" %>
+        </p>
+        <p style="margin: 5px 0 0 0; font-size: 13px; color: #666;">
+            <%= roomInfo.getDescription() %>
+        </p>
+    </div>
     <!-- onsubmit 이벤트를 추가하여 버튼 클릭 시 validateForm()을 먼저 실행합니다 -->
     <form action="reserveProcess.do" method="post" onsubmit="return validateForm();">
         
-        <input type="hidden" name="roomId" value="<%= roomId %>">
+        <input type="hidden" name="roomId" value="<%= roomInfo.getRoomId() %>">
         <input type="hidden" name="empNo" value="<%= loginEmp.getEmpNo() %>">
         <input type="hidden" name="status" value="예약완료">
         

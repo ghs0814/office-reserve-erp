@@ -15,27 +15,42 @@ public class ReserveController extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     // location.href를 통한 이동은 기본적으로 GET 방식이므로 doGet을 사용합니다.
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         
-        // 1. 한글 깨짐 방지
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html; charset=UTF-8");
 
-        // 2. 세션 확인 (로그인하지 않은 사용자의 접근 차단)
         HttpSession session = request.getSession();
         if (session.getAttribute("loginEmp") == null) {
             response.sendRedirect("index.jsp");
             return;
         }
 
-        // 3. main.jsp에서 넘겨준 방 번호(roomId) 파라미터 받기
+        // 1. main.jsp에서 넘겨준 방 번호 받기
         String roomId = request.getParameter("roomId");
+        
+     // 2. DB 연결 대신 임시 가짜 데이터 생성 (테스트용)
+        com.office.dto.RoomDTO roomInfo = new com.office.dto.RoomDTO();
+        roomInfo.setRoomId(roomId);
+        roomInfo.setRoomName(roomId + "호 회의실");
+        roomInfo.setCapacity(10);
+        roomInfo.setHasBeam("Y");
+        roomInfo.setDescription("현재 DB 미연결 상태이므로 임시 데이터를 표시 중입니다.");
 
-        // 4. 받은 방 번호를 request 객체에 담아서 reserve.jsp로 전달할 준비
-        request.setAttribute("selectedRoomId", roomId);
+        // 2. RoomDAO를 호출하여 DB에서 해당 방의 상세 정보 가져오기, 잠깐 주석
+//        com.office.dao.RoomDAO roomDao = new com.office.dao.RoomDAO();
+//        com.office.dto.RoomDTO roomInfo = roomDao.getRoomDetail(roomId);
 
-        // 5. 화면 이동 (Forward 방식 사용)
-        // sendRedirect를 쓰면 파라미터가 날아가기 때문에, 데이터를 유지하는 forward를 사용합니다.
+        // 3. 만약 DB에 없는 잘못된 방 번호라면 메인으로 돌려보내기 (에러 방어)
+        if (roomInfo == null) {
+            System.out.println("해당 방 정보가 DB에 존재하지 않습니다: " + roomId);
+            response.sendRedirect("main.jsp");
+            return;
+        }
+
+        // 4. 가져온 방 상세 정보(RoomDTO 객체)를 request에 담아서 전달
+        request.setAttribute("roomInfo", roomInfo);
+
         RequestDispatcher dispatcher = request.getRequestDispatcher("reserve.jsp");
         dispatcher.forward(request, response);
     }
