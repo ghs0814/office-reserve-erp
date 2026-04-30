@@ -11,14 +11,14 @@ import com.office.util.DBConnection;
 
 public class ReservationDAO {
 
-	// 1. 새로운 예약 정보 저장 (동시성 제어를 위해 synchronized 적용)
+    // 1. 새로운 예약 정보 저장
     public synchronized boolean insertReservation(ReservationDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        // 쿼리문에 PURPOSE 추가 및 VALUES에 ? 추가
-        String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_CODE, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) "
+        // ROOM_ID로 컬럼명 통일
+        String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) "
                    + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, ?, '예약완료')";
 
         try {
@@ -27,11 +27,9 @@ public class ReservationDAO {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, dto.getEmpNo());
                 pstmt.setString(2, dto.getRoomId());
-                pstmt.setDate(3, dto.getResDate());
+                pstmt.setDate(3, (java.sql.Date) dto.getResDate());
                 pstmt.setString(4, dto.getStartTime());
                 pstmt.setString(5, dto.getEndTime());
-                
-                // 6번째 파라미터로 purpose 세팅 추가
                 pstmt.setString(6, dto.getPurpose());
 
                 int count = pstmt.executeUpdate();
@@ -45,20 +43,20 @@ public class ReservationDAO {
         return result;
     }
 
-    // 2. 예약 중복 확인 (해당 시간에 예약이 있으면 true 반환)
-    public boolean checkDuplicate(String roomCode, java.sql.Date date, String startTime) {
+    // 2. 예약 중복 확인
+    public boolean checkDuplicate(String roomId, java.sql.Date date, String startTime) {
         boolean isDuplicate = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
-        String sql = "SELECT COUNT(*) FROM RESERVATION WHERE ROOM_CODE = ? AND RES_DATE = ? AND START_TIME = ? AND STATUS = '예약완료'";
+        String sql = "SELECT COUNT(*) FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND START_TIME = ? AND STATUS = '예약완료'";
 
         try {
             conn = DBConnection.getConnection();
             if (conn != null) {
                 pstmt = conn.prepareStatement(sql);
-                pstmt.setString(1, roomCode);
+                pstmt.setString(1, roomId);
                 pstmt.setDate(2, date);
                 pstmt.setString(3, startTime);
 
@@ -95,7 +93,7 @@ public class ReservationDAO {
                     ReservationDTO dto = new ReservationDTO();
                     dto.setResNo(rs.getInt("RES_NO"));
                     dto.setEmpNo(rs.getInt("EMP_NO"));
-                    dto.setRoomId(rs.getString("ROOM_CODE"));
+                    dto.setRoomId(rs.getString("ROOM_ID"));
                     dto.setResDate(rs.getDate("RES_DATE"));
                     dto.setStartTime(rs.getString("START_TIME"));
                     dto.setEndTime(rs.getString("END_TIME"));
@@ -111,7 +109,7 @@ public class ReservationDAO {
         return list;
     }
 
-    // 4. 예약 취소 (데이터를 지우지 않고 상태값만 '취소됨'으로 변경)
+    // 4. 예약 취소 (상태값 변경)
     public boolean cancelReservation(int resNo) {
         boolean result = false;
         Connection conn = null;
@@ -136,7 +134,33 @@ public class ReservationDAO {
         return result;
     }
 
-    // 자원 해제 공통 메서드 (중복 코드 방지)
+    // 5. AJAX용 예약된 시간 목록 가져오기
+    public List<String> getReservedTimes(String roomId, String resDate) {
+        List<String> reservedTimes = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        String sql = "SELECT START_TIME FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND STATUS = '예약완료'";
+
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, roomId);
+            pstmt.setString(2, resDate);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                reservedTimes.add(rs.getString("START_TIME"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResource(conn, pstmt, rs); // 자원 해제 추가
+        }
+        return reservedTimes;
+    }
+
     private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {
             if (rs != null) rs.close();
