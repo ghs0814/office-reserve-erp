@@ -14,6 +14,13 @@ public class RentalHistoryDTO {
     private int eqNo;           // 비품 번호
     private Date rentalDate;    // 대여일
     private Date returnDate;    // 반납일
-    private String status;      // 결재/대여 상태
-    private int approvalStep;   // 결재 단계
+    private String status;      // 결재/대여 상태 (승인대기, 대여중, 반려 등)
+    private int approvalStep;   // 현재 결재 단계 (1 ~ 5)
+    
+    // 5단계 승인 기록용 필드
+    private String sign1;
+    private String sign2;
+    private String sign3;
+    private String sign4;
+    private String sign5;
 }

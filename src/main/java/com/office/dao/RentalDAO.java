@@ -99,7 +99,46 @@ public class RentalDAO {
         }
         return result;
     }
+ // RentalDAO.java 내부에 추가할 결재 처리 공통 메서드
+    public boolean processStepApproval(int rentalNo, int currentStep, String managerName, String action) {
+        boolean result = false;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
 
+        try {
+            conn = DBConnection.getConnection();
+            String sql = "";
+
+            if ("approve".equals(action)) {
+                if (currentStep < 5) {
+                    sql = "UPDATE RENTAL_HISTORY SET SIGN" + currentStep + " = ?, APPROVAL_STEP = ? WHERE RENTAL_NO = ?";
+                    pstmt = conn.prepareStatement(sql);
+                    pstmt.setString(1, managerName);
+                    pstmt.setInt(2, currentStep + 1);
+                    pstmt.setInt(3, rentalNo);
+                } else {
+                    sql = "UPDATE RENTAL_HISTORY SET SIGN5 = ?, STATUS = '대여중' WHERE RENTAL_NO = ?";
+                    pstmt = conn.prepareStatement(sql);
+                    pstmt.setString(1, managerName);
+                    pstmt.setInt(2, rentalNo);
+                }
+            } else {
+                sql = "UPDATE RENTAL_HISTORY SET SIGN1=NULL, SIGN2=NULL, SIGN3=NULL, SIGN4=NULL, SIGN5=NULL, " +
+                      "APPROVAL_STEP = 1, STATUS = '반려됨' WHERE RENTAL_NO = ?";
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, rentalNo);
+            }
+
+            int count = pstmt.executeUpdate();
+            if (count > 0) result = true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResource(conn, pstmt, null);
+        }
+        return result;
+    }
     // 자원 해제 공통 메서드
     private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {

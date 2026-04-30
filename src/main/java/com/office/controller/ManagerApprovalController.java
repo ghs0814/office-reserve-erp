@@ -1,15 +1,18 @@
 package com.office.controller;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.office.dto.RentalHistoryDTO;
 
 @WebServlet("/managerApproval.do")
 public class ManagerApprovalController extends HttpServlet {
@@ -17,31 +20,26 @@ public class ManagerApprovalController extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         
-        // 1. DB 조인 결과를 흉내 낸 가짜 데이터 리스트 생성
-        List<Map<String, String>> approvalList = new ArrayList<>();
+        // [테스트용 가짜 데이터 생성] 
+        // 나중에는 RentalDAO.getPendingList(현재관리자등급) 으로 교체됩니다.
+        List<RentalHistoryDTO> mockList = new ArrayList<>();
         
-        Map<String, String> req1 = new HashMap<>();
-        req1.put("rentalNo", "1001");
-        req1.put("empName", "김사원");
-        req1.put("eqName", "MacBook Pro 16인치");
-        req1.put("rentalDate", "2026-05-02");
-        req1.put("returnDate", "2026-05-10");
-        req1.put("status", "승인대기");
-        approvalList.add(req1);
+        // 1단계 대기 중인 기안
+        RentalHistoryDTO dto1 = new RentalHistoryDTO(101, 202601, 5, Date.valueOf("2026-05-01"), Date.valueOf("2026-05-05"), "승인대기", 1, null, null, null, null, null);
+        
+        // 2단계 대기 중인 기안 (1단계 승인 완료 상태)
+        RentalHistoryDTO dto2 = new RentalHistoryDTO(102, 202602, 3, Date.valueOf("2026-05-10"), Date.valueOf("2026-05-12"), "승인대기", 2, "김팀장", null, null, null, null);
 
-        Map<String, String> req2 = new HashMap<>();
-        req2.put("rentalNo", "1002");
-        req2.put("empName", "이대리");
-        req2.put("eqName", "로지텍 무선 마우스");
-        req2.put("rentalDate", "2026-05-03");
-        req2.put("returnDate", "2026-05-05");
-        req2.put("status", "승인대기");
-        approvalList.add(req2);
+        // 4단계 대기 중인 기안 (1, 2, 3단계 승인 완료 상태)
+        RentalHistoryDTO dto3 = new RentalHistoryDTO(103, 202603, 1, Date.valueOf("2026-05-20"), Date.valueOf("2026-05-25"), "승인대기", 4, "김팀장", "이부장", "박본부장", null, null);
 
-        // 2. request 영역에 데이터 담기
-        request.setAttribute("approvalList", approvalList);
+        mockList.add(dto1);
+        mockList.add(dto2);
+        mockList.add(dto3);
 
-        // 3. JSP 화면으로 포워딩
-        request.getRequestDispatcher("managerApproval.jsp").forward(request, response);
+        request.setAttribute("approvalList", mockList);
+        
+        RequestDispatcher dispatcher = request.getRequestDispatcher("managerApproval.jsp");
+        dispatcher.forward(request, response);
     }
 }

@@ -1,8 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="com.office.dto.RentalHistoryDTO" %>
 <%
-    List<Map<String, String>> approvalList = (List<Map<String, String>>) request.getAttribute("approvalList");
+    List<RentalHistoryDTO> approvalList = (List<RentalHistoryDTO>) request.getAttribute("approvalList");
 %>
 <!DOCTYPE html>
 <html>
@@ -10,126 +10,59 @@
 <meta charset="UTF-8">
 <title>오피스 예약 시스템 - 관리자 결재함</title>
 <style>
-    body {
-        font-family: 'Malgun Gothic', sans-serif;
-        background-color: #f8f9fa;
-        padding: 40px;
-    }
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-    .table-container {
-        background-color: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        border: 1px solid #e0e0e0;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-    }
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ddd;
-    }
-    th {
-        background-color: #f5f5f5;
-        color: #333;
-        font-weight: bold;
-    }
-    .status-badge {
-        background-color: #FFC107;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    .btn-approve {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .btn-reject {
-        background-color: #f44336;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .btn-approve:hover { background-color: #45a049; }
-    .btn-reject:hover { background-color: #d32f2f; }
+    body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; padding: 20px; }
+    .container { background-color: white; padding: 30px; border-radius: 8px; width: 1000px; margin: 0 auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: center; }
+    th, td { border: 1px solid #ddd; padding: 12px; }
+    th { background-color: #673AB7; color: white; }
+    .btn-approve { background-color: #4CAF50; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    .btn-reject { background-color: #f44336; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+    .sign-box { display: inline-block; width: 50px; height: 25px; line-height: 25px; border: 1px solid #ccc; font-size: 11px; background-color: #eee; margin: 0 2px; }
+    .sign-done { background-color: #c8e6c9; color: #2e7d32; font-weight: bold; }
 </style>
-<script>
-    function processApproval(rentalNo, action) {
-        const actionText = action === 'approve' ? '승인' : '반려';
-        if (confirm("해당 기안을 " + actionText + "하시겠습니까?")) {
-            // 실제 구현 시 ApprovalProcessController 로 이동하는 폼 제출이나 AJAX 호출
-            //alert(rentalNo + "번 기안이 " + actionText + " 처리되었습니다. (테스트)");
-            location.href = 'approvalProcess.do?rentalNo=' + rentalNo + '&action=' + action;
-        }
-    }
-</script>
 </head>
 <body>
 
-    <div class="header">
-        <h2>비품 대여 결재함 (관리자용)</h2>
-        <div>
-            <a href="main.jsp" style="text-decoration: none; color: #333; font-weight: bold;">[메인으로 돌아가기]</a>
-        </div>
-    </div>
+<div class="container">
+    <h2>관리자 결재함 (5단계 시스템)</h2>
+    <a href="main.jsp" style="display:inline-block; margin-bottom: 20px; color: #555; font-weight: bold;">[메인으로 돌아가기]</a>
 
-    <div class="table-container">
-        <table>
-            <thead>
+    <table>
+        <thead>
+            <tr>
+                <th>대여 번호</th>
+                <th>사번</th>
+                <th>현재 단계</th>
+                <th>결재 현황 (1 ~ 5단계)</th>
+                <th>액션</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if(approvalList == null || approvalList.isEmpty()) { %>
+                <tr><td colspan="5">현재 결재 대기 중인 문서가 없습니다.</td></tr>
+            <% } else { 
+                for(RentalHistoryDTO dto : approvalList) { %>
                 <tr>
-                    <th>기안 번호</th>
-                    <th>신청자</th>
-                    <th>비품명</th>
-                    <th>대여 기간</th>
-                    <th>상태</th>
-                    <th>결재 처리</th>
-                </tr>
-            </thead>
-            <tbody>
-                <%
-                    if (approvalList != null && !approvalList.isEmpty()) {
-                        for (Map<String, String> req : approvalList) {
-                %>
-                <tr>
-                    <td><%= req.get("rentalNo") %></td>
-                    <td><b><%= req.get("empName") %></b></td>
-                    <td><%= req.get("eqName") %></td>
-                    <td><%= req.get("rentalDate") %> ~ <%= req.get("returnDate") %></td>
-                    <td><span class="status-badge"><%= req.get("status") %></span></td>
+                    <td><%= dto.getRentalNo() %></td>
+                    <td><%= dto.getEmpNo() %></td>
+                    <td><b><%= dto.getApprovalStep() %>단계 대기중</b></td>
                     <td>
-                        <button class="btn-approve" onclick="processApproval('<%= req.get("rentalNo") %>', 'approve')">승인</button>
-                        <button class="btn-reject" onclick="processApproval('<%= req.get("rentalNo") %>', 'reject')">반려</button>
+                        <div class="sign-box <%= dto.getSign1() != null ? "sign-done" : "" %>"><%= dto.getSign1() != null ? "O" : "X" %></div>
+                        <div class="sign-box <%= dto.getSign2() != null ? "sign-done" : "" %>"><%= dto.getSign2() != null ? "O" : "X" %></div>
+                        <div class="sign-box <%= dto.getSign3() != null ? "sign-done" : "" %>"><%= dto.getSign3() != null ? "O" : "X" %></div>
+                        <div class="sign-box <%= dto.getSign4() != null ? "sign-done" : "" %>"><%= dto.getSign4() != null ? "O" : "X" %></div>
+                        <div class="sign-box <%= dto.getSign5() != null ? "sign-done" : "" %>"><%= dto.getSign5() != null ? "O" : "X" %></div>
+                    </td>
+                    <td>
+                        <a href="approvalProcess.do?action=approve&rentalNo=<%= dto.getRentalNo() %>&approvalStep=<%= dto.getApprovalStep() %>" class="btn-approve">승인</a>
+                        <a href="approvalProcess.do?action=reject&rentalNo=<%= dto.getRentalNo() %>&approvalStep=<%= dto.getApprovalStep() %>" class="btn-reject">반려</a>
                     </td>
                 </tr>
-                <%
-                        }
-                    } else {
-                %>
-                <tr>
-                    <td colspan="6" style="padding: 30px; color: #888;">대기 중인 결재 내역이 없습니다.</td>
-                </tr>
-                <%  } %>
-            </tbody>
-        </table>
-    </div>
+            <%  }
+               } %>
+        </tbody>
+    </table>
+</div>
 
 </body>
 </html>
