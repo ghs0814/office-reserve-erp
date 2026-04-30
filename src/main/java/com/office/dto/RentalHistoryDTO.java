@@ -9,9 +9,11 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RentalHistoryDTO {
-    private int historyNo;       // 이력 번호 (PK)
-    private int empNo;           // 사원번호 (FK)
-    private int equipNo;         // 비품 번호 (FK)
-    private Date rentalDate;     // 대여 날짜
-    private String status;       // 대여 상태 (대여중, 반납완료)
+    private int rentalNo;       // 대여 번호
+    private int empNo;          // 사원 번호
+    private int eqNo;           // 비품 번호
+    private Date rentalDate;    // 대여일
+    private Date returnDate;    // 반납일
+    private String status;      // 결재/대여 상태
+    private int approvalStep;   // 결재 단계
 }
