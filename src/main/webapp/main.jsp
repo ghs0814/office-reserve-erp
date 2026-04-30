@@ -89,6 +89,8 @@
         <h2>오피스 예약 시스템</h2>
         <div>
             <b><%= loginEmp.getEmpName() %></b>님 환영합니다.
+            <!-- '내 예약 조회' 버튼 추가 -->
+            <a href="myReserveList.do" class="logout-btn" style="background-color: #2196F3; margin-right: 10px;">내 예약 조회</a>
             <a href="logout.do" class="logout-btn">로그아웃</a>
         </div>
     </div>

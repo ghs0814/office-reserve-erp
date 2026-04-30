@@ -1,17 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.office.dto.EmployeeDTO" %>
 <%
-    // 1. 세션 검사 (로그인 상태 확인)
     EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
     if (loginEmp == null) {
         response.sendRedirect("index.jsp");
         return;
     }
 
-    // 2. ReserveController에서 포워드 방식으로 넘겨준 방 번호 받기
     String roomId = (String) request.getAttribute("selectedRoomId");
     
-    // 비정상적인 접근 방지 (방 번호가 없으면 메인으로 돌려보냄)
     if (roomId == null || roomId.trim().isEmpty()) {
         response.sendRedirect("main.jsp");
         return;
@@ -114,18 +111,45 @@
     .btn-submit:hover { background-color: #45a049; }
     .btn-cancel:hover { background-color: #bbb; }
 </style>
+
+<!-- 유효성 검사를 위한 자바스크립트 추가 -->
+<script>
+    function validateForm() {
+        const resDateInput = document.getElementById("resDate").value;
+        const startTimeInput = document.getElementById("startTime").value;
+        const endTimeInput = document.getElementById("endTime").value;
+
+        // 1. 날짜 검증: 과거 날짜 선택 방지
+        const selectedDate = new Date(resDateInput);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 오늘 날짜의 자정으로 기준 세팅
+
+        if (selectedDate < today) {
+            alert("과거의 날짜는 예약할 수 없습니다.");
+            return false; // 폼 전송 중단
+        }
+
+        // 2. 시간 검증: 종료 시간이 시작 시간보다 빠르거나 같은 경우 방지
+        if (startTimeInput >= endTimeInput) {
+            alert("종료 시간은 시작 시간보다 늦어야 합니다.");
+            return false; // 폼 전송 중단
+        }
+
+        // 모든 검증을 통과하면 true를 반환하여 폼 전송 진행
+        return true; 
+    }
+</script>
+
 </head>
 <body>
 
 <div class="reserve-container">
     <h2>회의실 예약 신청</h2>
-    <!-- 컨트롤러에서 넘겨준 방 번호를 화면에 예쁘게 출력합니다 -->
     <span class="room-badge">[ <%= roomId %> ]</span>
     
-    <!-- 예약을 실제 처리할 다음 컨트롤러(reserveProcess.do)로 데이터를 보냅니다 -->
-    <form action="reserveProcess.do" method="post">
+    <!-- onsubmit 이벤트를 추가하여 버튼 클릭 시 validateForm()을 먼저 실행합니다 -->
+    <form action="reserveProcess.do" method="post" onsubmit="return validateForm();">
         
-        <!-- DTO 구조에 맞춘 필수 hidden 데이터 -->
         <input type="hidden" name="roomId" value="<%= roomId %>">
         <input type="hidden" name="empNo" value="<%= loginEmp.getEmpNo() %>">
         <input type="hidden" name="status" value="예약완료">
