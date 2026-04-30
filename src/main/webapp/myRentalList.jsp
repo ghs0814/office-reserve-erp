@@ -1,9 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%>
-<%@ page import="java.util.Map"%>
+<%@ page import="com.office.dto.RentalHistoryDTO"%>
 <%
-List<Map<String, String>> myList = (List<Map<String, String>>) request.getAttribute("myList");
+// Controller에서 전달받은 DTO 리스트
+List<RentalHistoryDTO> myList = (List<RentalHistoryDTO>) request.getAttribute("myList");
 %>
 <!DOCTYPE html>
 <html>
@@ -117,8 +118,8 @@ th {
 			<tbody>
 				<%
 				if (myList != null && !myList.isEmpty()) {
-					for (Map<String, String> item : myList) {
-						String status = item.get("status");
+					for (RentalHistoryDTO item : myList) { // Map 대신 DTO 객체 사용
+						String status = item.getStatus();
 						String badgeClass = "bg-secondary";
 
 						if ("승인대기".equals(status))
@@ -127,16 +128,17 @@ th {
 					badgeClass = "bg-success";
 				%>
 				<tr>
-					<td><%=item.get("rentalNo")%></td>
-					<td><b><%=item.get("eqName")%></b></td>
-					<td><%=item.get("rentalDate")%> ~ <%=item.get("returnDate")%></td>
+					<td><%=item.getRentalNo()%></td>
+					<td><b><%=item.getEqName()%></b></td>
+					<!-- DTO에서 이름 출력 -->
+					<td><%=item.getRentalDate()%> ~ <%=item.getReturnDate()%></td>
 					<td><span class="status-badge <%=badgeClass%>"><%=status%></span></td>
 					<td>
 						<%
 						if ("대여중".equals(status)) {
 						%>
 						<button class="btn-return"
-							onclick="processReturn('<%=item.get("rentalNo")%>')">반납하기</button>
+							onclick="processReturn('<%=item.getRentalNo()%>')">반납하기</button>
 						<%
 						} else {
 						%> - <%

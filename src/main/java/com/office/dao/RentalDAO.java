@@ -11,14 +11,14 @@ import com.office.util.DBConnection;
 
 public class RentalDAO {
 
-    // 1. 비품 대여 신청 (기안 올리기)
+	// 1. 비품 대여 신청 (1단계 자동 서명 및 2단계 상신)
     public boolean insertRental(RentalHistoryDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        String sql = "INSERT INTO RENTAL_HISTORY (RENTAL_NO, EMP_NO, EQ_NO, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP) "
-                   + "VALUES (SEQ_RENTAL.NEXTVAL, ?, ?, ?, ?, '승인대기', 1)";
+        String sql = "INSERT INTO RENTAL_HISTORY (RENTAL_NO, EMP_NO, EQ_NO, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, SIGN1) "
+                   + "VALUES (SEQ_RENTAL.NEXTVAL, ?, ?, ?, ?, '승인대기', ?, ?)";
 
         try {
             conn = DBConnection.getConnection();
@@ -28,6 +28,8 @@ public class RentalDAO {
                 pstmt.setInt(2, dto.getEqNo());
                 pstmt.setDate(3, dto.getRentalDate());
                 pstmt.setDate(4, dto.getReturnDate());
+                pstmt.setInt(5, dto.getApprovalStep());
+                pstmt.setString(6, dto.getSign1());
 
                 int count = pstmt.executeUpdate();
                 if (count > 0) result = true;
@@ -40,19 +42,21 @@ public class RentalDAO {
         return result;
     }
 
-    // 2. 관리자 결재함 (승인 대기 중인 목록 조회)
-    public List<RentalHistoryDTO> getPendingList() {
+    // 2. 관리자 결재함 (본인 등급에 맞는 승인 대기 목록만 조회)
+    public List<RentalHistoryDTO> getPendingList(int managerLevel) {
         List<RentalHistoryDTO> list = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
-        String sql = "SELECT * FROM RENTAL_HISTORY WHERE STATUS = '승인대기' ORDER BY RENTAL_DATE ASC";
+        // APPROVAL_STEP이 현재 관리자 레벨과 일치하는 것만 가져옴
+        String sql = "SELECT * FROM RENTAL_HISTORY WHERE STATUS = '승인대기' AND APPROVAL_STEP = ? ORDER BY RENTAL_DATE ASC";
 
         try {
             conn = DBConnection.getConnection();
             if (conn != null) {
                 pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, managerLevel);
                 rs = pstmt.executeQuery();
 
                 while (rs.next()) {
@@ -63,6 +67,12 @@ public class RentalDAO {
                     dto.setRentalDate(rs.getDate("RENTAL_DATE"));
                     dto.setReturnDate(rs.getDate("RETURN_DATE"));
                     dto.setStatus(rs.getString("STATUS"));
+                    dto.setApprovalStep(rs.getInt("APPROVAL_STEP"));
+                    dto.setSign1(rs.getString("SIGN1"));
+                    dto.setSign2(rs.getString("SIGN2"));
+                    dto.setSign3(rs.getString("SIGN3"));
+                    dto.setSign4(rs.getString("SIGN4"));
+                    dto.setSign5(rs.getString("SIGN5"));
                     list.add(dto);
                 }
             }
@@ -138,6 +148,46 @@ public class RentalDAO {
             closeResource(conn, pstmt, null);
         }
         return result;
+    }
+    // 내 대여 목록 가져오기
+ // 내 대여 내역 목록 가져오기 (비품 이름 포함)
+    public List<RentalHistoryDTO> getMyRentalList(int empNo) {
+        List<RentalHistoryDTO> list = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        // 대여 기록과 비품 테이블을 조인하여 비품명(EQ_NAME)을 함께 가져옵니다.
+        String sql = "SELECT h.*, e.EQ_NAME " +
+                     "FROM RENTAL_HISTORY h " +
+                     "JOIN EQUIPMENT e ON h.EQ_NO = e.EQ_NO " +
+                     "WHERE h.EMP_NO = ? " +
+                     "ORDER BY h.RENTAL_NO DESC";
+
+        try {
+            conn = DBConnection.getConnection();
+            if (conn != null) {
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, empNo);
+                rs = pstmt.executeQuery();
+
+                while (rs.next()) {
+                    RentalHistoryDTO dto = new RentalHistoryDTO();
+                    dto.setRentalNo(rs.getInt("RENTAL_NO"));
+                    dto.setEqNo(rs.getInt("EQ_NO"));
+                    dto.setEqName(rs.getString("EQ_NAME")); // 조인해서 가져온 이름 세팅
+                    dto.setRentalDate(rs.getDate("RENTAL_DATE"));
+                    dto.setReturnDate(rs.getDate("RETURN_DATE"));
+                    dto.setStatus(rs.getString("STATUS"));
+                    list.add(dto);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeResource(conn, pstmt, rs);
+        }
+        return list;
     }
     // 자원 해제 공통 메서드
     private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {

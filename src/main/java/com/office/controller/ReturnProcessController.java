@@ -8,6 +8,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.office.dao.RentalDAO;
+
 @WebServlet("/returnProcess.do")
 public class ReturnProcessController extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -23,20 +25,18 @@ public class ReturnProcessController extends HttpServlet {
         out.println("<script>");
 
         if (rentalNoStr != null) {
-            
-            /*
-            // [나중에 DB 연결 시 작성할 핵심 로직 미리보기]
             int rentalNo = Integer.parseInt(rentalNoStr);
             RentalDAO rentalDao = new RentalDAO();
             
-            // 1. 상태를 '반납완료'로 변경
-            rentalDao.updateStatus(rentalNo, "반납완료");
+            // 상태를 '반납완료'로 변경 실행
+            boolean isSuccess = rentalDao.updateStatus(rentalNo, "반납완료");
             
-            // 2. 비품 테이블(EQUIPMENT)의 남은 수량(REMAIN_COUNT) +1 증가 로직 추가 필요
-            */
-
-            out.println("alert('" + rentalNoStr + "번 비품이 성공적으로 반납 처리되었습니다.');");
-            out.println("location.href='" + request.getContextPath() + "/myRentalList.do';"); 
+            if(isSuccess) {
+                out.println("alert('" + rentalNo + "번 비품이 성공적으로 반납 처리되었습니다.');");
+            } else {
+                out.println("alert('반납 처리에 실패했습니다.');");
+            }
+            out.println("location.href='myRentalList.do';"); 
             
         } else {
             out.println("alert('잘못된 접근입니다.');");

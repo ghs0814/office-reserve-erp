@@ -73,7 +73,7 @@ public class ReservationDAO {
         return isDuplicate;
     }
 
-    // 3. 마이페이지용 내 예약 내역 조회
+ // 3. 마이페이지용 내 예약 내역 조회
     public List<ReservationDTO> getMyReservations(int empNo) {
         List<ReservationDTO> list = new ArrayList<>();
         Connection conn = null;
@@ -97,6 +97,7 @@ public class ReservationDAO {
                     dto.setResDate(rs.getDate("RES_DATE"));
                     dto.setStartTime(rs.getString("START_TIME"));
                     dto.setEndTime(rs.getString("END_TIME"));
+                    dto.setPurpose(rs.getString("PURPOSE")); // 누락되었던 부분 추가
                     dto.setStatus(rs.getString("STATUS"));
                     list.add(dto);
                 }

@@ -32,6 +32,8 @@ public class EmployeeDAO {
                     dto.setLoginId(rs.getString("LOGIN_ID"));
                     dto.setLoginPw(rs.getString("LOGIN_PW"));
                     dto.setEmpName(rs.getString("EMP_NAME"));
+                 // [중요] DB에서 EMP_LEVEL 컬럼 값을 가져와 DTO에 세팅합니다.
+                    dto.setEmpLevel(rs.getInt("EMP_LEVEL"));
                 }
             }
         } catch (Exception e) {

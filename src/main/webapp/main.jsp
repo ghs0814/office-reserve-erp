@@ -142,7 +142,7 @@ body {
 			<!-- 테스트를 위해 이름이 '관리자' 이거나, 사번이 특정 번호일 때 열리도록 임시 설정 -->
 			<%
 			// 실제 DB 연동 시 loginEmp.getRole() == 1 등으로 처리
-			if ("관리자".equals(loginEmp.getEmpName()) || loginEmp.getEmpNo() == 9999) {
+			if (loginEmp.getEmpLevel() >= 2) {
 			%>
 			<a href="managerApproval.do" class="logout-btn"
 				style="background-color: #673AB7; margin-right: 10px;">관리자 결재함</a>

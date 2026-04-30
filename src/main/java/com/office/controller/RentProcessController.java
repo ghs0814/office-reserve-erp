@@ -10,8 +10,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-// import com.office.dao.RentalDAO;
-// import com.office.dto.RentalHistoryDTO;
+// [수정] 아래 두 줄의 주석(//)을 해제하여 DTO와 DAO를 정상적으로 불러옵니다.
+import com.office.dao.RentalDAO;
+import com.office.dto.RentalHistoryDTO;
 
 @WebServlet("/rentProcess.do")
 public class RentProcessController extends HttpServlet {
@@ -32,33 +33,33 @@ public class RentProcessController extends HttpServlet {
         out.println("<script>");
 
         try {
-            int eqNo = Integer.parseInt(eqNoStr);
+        	int eqNo = Integer.parseInt(eqNoStr);
             int empNo = Integer.parseInt(empNoStr);
             Date rentalDate = Date.valueOf(rentalDateStr);
             Date returnDate = Date.valueOf(returnDateStr);
 
-            // DB 연동 전 임시 테스트 로직 (무조건 성공 처리)
-            boolean isSuccess = true;
+            // 세션에서 로그인한 사원(기안자) 정보 가져오기
+            javax.servlet.http.HttpSession session = request.getSession();
+            com.office.dto.EmployeeDTO loginEmp = (com.office.dto.EmployeeDTO) session.getAttribute("loginEmp");
 
-            /*
-            // [나중에 집에 가셔서 DB 연결할 때 사용할 실제 코드]
             RentalHistoryDTO dto = new RentalHistoryDTO();
             dto.setEqNo(eqNo);
             dto.setEmpNo(empNo);
             dto.setRentalDate(rentalDate);
             dto.setReturnDate(returnDate);
-            dto.setStatus("승인대기"); // 초기 상태 설정
-            dto.setApprovalStep(1);   // 1차 결재 대기
+            
+            // 핵심: 기안자는 1단계 승인자이므로 2단계로 상신하고 서명 1번에 본인 이름 세팅
+            dto.setApprovalStep(2); 
+            dto.setSign1(loginEmp.getEmpName());
 
             RentalDAO dao = new RentalDAO();
             boolean isSuccess = dao.insertRental(dto);
-            */
 
             // 2. 결과 처리
             if (isSuccess) {
                 out.println("alert('비품 대여 결재가 성공적으로 기안되었습니다. (관리자 승인 대기 중)');");
-                // 실제로는 내 대여 내역(myRentalList.do)으로 이동하는 것이 좋습니다.
-                out.println("location.href='main.jsp';"); 
+                // [수정] 성공 시 내 대여 내역 페이지로 바로 이동하도록 변경
+                out.println("location.href='myRentalList.do';"); 
             } else {
                 out.println("alert('결재 기안 중 오류가 발생했습니다.');");
                 out.println("history.back();");

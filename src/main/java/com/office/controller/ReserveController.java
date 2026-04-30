@@ -12,51 +12,45 @@ import javax.servlet.http.HttpSession;
 // main.jsp에서 reserve.do?roomId=... 로 호출하면 이 서블릿이 실행됩니다.
 @WebServlet("/reserve.do")
 public class ReserveController extends HttpServlet {
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    // location.href를 통한 이동은 기본적으로 GET 방식이므로 doGet을 사용합니다.
-protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html; charset=UTF-8");
+	// location.href를 통한 이동은 기본적으로 GET 방식이므로 doGet을 사용합니다.
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-        HttpSession session = request.getSession();
-        if (session.getAttribute("loginEmp") == null) {
-            response.sendRedirect("index.jsp");
-            return;
-        }
+		request.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html; charset=UTF-8");
 
-        // 1. main.jsp에서 넘겨준 방 번호 받기
-        String roomId = request.getParameter("roomId");
-        
-     // 2. DB 연결 대신 임시 가짜 데이터 생성 (테스트용)
-        com.office.dto.RoomDTO roomInfo = new com.office.dto.RoomDTO();
-        roomInfo.setRoomId(roomId);
-        roomInfo.setRoomName(roomId + "호 회의실");
-        roomInfo.setCapacity(10);
-        roomInfo.setHasBeam("Y");
-        roomInfo.setDescription("현재 DB 미연결 상태이므로 임시 데이터를 표시 중입니다.");
+		HttpSession session = request.getSession();
+		if (session.getAttribute("loginEmp") == null) {
+			response.sendRedirect("index.jsp");
+			return;
+		}
 
-        // 2. RoomDAO를 호출하여 DB에서 해당 방의 상세 정보 가져오기, 잠깐 주석
-//        com.office.dao.RoomDAO roomDao = new com.office.dao.RoomDAO();
-//        com.office.dto.RoomDTO roomInfo = roomDao.getRoomDetail(roomId);
+		// 1. main.jsp에서 넘겨준 방 번호 받기
+		String roomId = request.getParameter("roomId");
 
-        // 3. 만약 DB에 없는 잘못된 방 번호라면 메인으로 돌려보내기 (에러 방어)
-        if (roomInfo == null) {
-            System.out.println("해당 방 정보가 DB에 존재하지 않습니다: " + roomId);
-            response.sendRedirect("main.jsp");
-            return;
-        }
+		// 2. RoomDAO를 호출하여 DB에서 해당 방의 상세 정보 가져오기, 잠깐 주석
+		com.office.dao.RoomDAO roomDao = new com.office.dao.RoomDAO();
+		com.office.dto.RoomDTO roomInfo = roomDao.getRoomDetail(roomId);
 
-        // 4. 가져온 방 상세 정보(RoomDTO 객체)를 request에 담아서 전달
-        request.setAttribute("roomInfo", roomInfo);
+		// 3. 만약 DB에 없는 잘못된 방 번호라면 메인으로 돌려보내기 (에러 방어)
+		if (roomInfo == null) {
+			System.out.println("해당 방 정보가 DB에 존재하지 않습니다: " + roomId);
+			response.sendRedirect("main.jsp");
+			return;
+		}
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("reserve.jsp");
-        dispatcher.forward(request, response);
-    }
+		// 4. 가져온 방 상세 정보(RoomDTO 객체)를 request에 담아서 전달
+		request.setAttribute("roomInfo", roomInfo);
 
-    // 만약 POST로 데이터가 들어와도 doGet에서 똑같이 처리하도록 연결해 줍니다.
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doGet(request, response);
-    }
+		RequestDispatcher dispatcher = request.getRequestDispatcher("reserve.jsp");
+		dispatcher.forward(request, response);
+	}
+
+	// 만약 POST로 데이터가 들어와도 doGet에서 똑같이 처리하도록 연결해 줍니다.
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		doGet(request, response);
+	}
 }

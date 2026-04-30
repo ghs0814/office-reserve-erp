@@ -12,6 +12,7 @@ public class RentalHistoryDTO {
     private int rentalNo;       // 대여 번호
     private int empNo;          // 사원 번호
     private int eqNo;           // 비품 번호
+    private String eqName;      // [추가] 비품 이름을 담기 위한 필드
     private Date rentalDate;    // 대여일
     private Date returnDate;    // 반납일
     private String status;      // 결재/대여 상태 (승인대기, 대여중, 반려 등)
