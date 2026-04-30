@@ -35,11 +35,16 @@ public class LoginController extends HttpServlet {
 
         // 3. DAO를 통해 DB에 일치하는 사원이 있는지 확인
         EmployeeDAO dao = new EmployeeDAO();
-        EmployeeDTO dto = dao.loginCheck(loginId, loginPw);
-
+        //EmployeeDTO dto = dao.loginCheck(loginId, loginPw);
+        //로그인 체크 임시 주석처리
+     // 2. 가짜 데이터를 강제로 생성
+        EmployeeDTO dto = new EmployeeDTO();
+        dto.setLoginId(loginId);
+        dto.setEmpName("테스트사원");
+        
         // 4. 확인 결과에 따른 처리
-        //true
-        if (dto != null) {
+        //dto != null
+        if (true) {
             // [로그인 성공] 
             // HttpSession: 브라우저가 꺼지기 전까지 유지되는 사용자만의 개인 보관함
             HttpSession session = request.getSession();
