@@ -11,25 +11,28 @@ import com.office.util.DBConnection;
 
 public class ReservationDAO {
 
-    // 1. 새로운 예약 정보 저장 (동시성 제어를 위해 synchronized 적용)
+	// 1. 새로운 예약 정보 저장 (동시성 제어를 위해 synchronized 적용)
     public synchronized boolean insertReservation(ReservationDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        // 시퀀스(SEQ_RESERVATION)를 사용하여 예약 번호를 자동 부여한다고 가정
-        String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_CODE, RES_DATE, START_TIME, END_TIME, STATUS) "
-                   + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, '예약완료')";
+        // 쿼리문에 PURPOSE 추가 및 VALUES에 ? 추가
+        String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_CODE, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) "
+                   + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, ?, '예약완료')";
 
         try {
             conn = DBConnection.getConnection();
-            if (conn != null) { // DB 연결이 성공했을 때만 실행
+            if (conn != null) { 
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, dto.getEmpNo());
                 pstmt.setString(2, dto.getRoomId());
                 pstmt.setDate(3, dto.getResDate());
                 pstmt.setString(4, dto.getStartTime());
                 pstmt.setString(5, dto.getEndTime());
+                
+                // 6번째 파라미터로 purpose 세팅 추가
+                pstmt.setString(6, dto.getPurpose());
 
                 int count = pstmt.executeUpdate();
                 if (count > 0) result = true;

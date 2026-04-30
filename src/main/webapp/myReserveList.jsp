@@ -9,7 +9,6 @@
         return;
     }
 
-    // 컨트롤러에서 넘겨준 예약 리스트 받기
     List<ReservationDTO> reserveList = (List<ReservationDTO>) request.getAttribute("reserveList");
 %>
 <!DOCTYPE html>
@@ -85,7 +84,39 @@
         font-weight: bold;
         font-size: 12px;
     }
+
+    /* 취소된 상태용 배지 색상 */
+    .status-cancel {
+        background-color: #ffebee;
+        color: #d32f2f;
+    }
+    
+    /* 취소 버튼 스타일 */
+    .btn-cancel-small {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-cancel-small:hover {
+        background-color: #d32f2f;
+    }
 </style>
+
+<!-- 예약 취소 확인 자바스크립트 -->
+<script>
+    function cancelReserve(resNo) {
+        if (confirm("정말 이 예약을 취소하시겠습니까?")) {
+            // 확인을 누르면 취소 컨트롤러로 예약 번호를 넘기며 이동합니다.
+            location.href = "cancelReserve.do?resNo=" + resNo;
+        }
+    }
+</script>
 </head>
 <body>
 
@@ -104,12 +135,13 @@
                 <th>사용 시간</th>
                 <th>사용 목적</th>
                 <th>상태</th>
+                <th>비고</th> <!-- 비고 열 추가 -->
             </tr>
         </thead>
         <tbody>
             <% if (reserveList == null || reserveList.isEmpty()) { %>
                 <tr>
-                    <td colspan="6">예약 내역이 없습니다.</td>
+                    <td colspan="7">예약 내역이 없습니다.</td>
                 </tr>
             <% } else { 
                 for (ReservationDTO dto : reserveList) {
@@ -120,7 +152,20 @@
                     <td><%= dto.getResDate() %></td>
                     <td><%= dto.getStartTime() %> ~ <%= dto.getEndTime() %></td>
                     <td><%= dto.getPurpose() %></td>
-                    <td><span class="status-badge"><%= dto.getStatus() %></span></td>
+                    <td>
+                        <!-- 상태가 '취소됨'이면 빨간색 배지, 아니면 파란색 배지 적용 -->
+                        <span class="status-badge <%= "취소됨".equals(dto.getStatus()) ? "status-cancel" : "" %>">
+                            <%= dto.getStatus() %>
+                        </span>
+                    </td>
+                    <td>
+                        <!-- 예약완료 상태일 때만 취소 버튼 보여주기 -->
+                        <% if ("예약완료".equals(dto.getStatus())) { %>
+                            <button type="button" class="btn-cancel-small" onclick="cancelReserve(<%= dto.getResNo() %>)">취소</button>
+                        <% } else { %>
+                            -
+                        <% } %>
+                    </td>
                 </tr>
             <% 
                 } 
