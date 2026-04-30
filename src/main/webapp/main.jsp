@@ -129,20 +129,31 @@ body {
 		<h2>오피스 예약 시스템</h2>
 		<div>
 			<b><%=loginEmp.getEmpName()%></b>님 환영합니다.
-			<!-- main.jsp 헤더에 추가 -->
-			<a href="myRentalList.do" class="logout-btn"
-				style="background-color: #00BCD4; margin-right: 10px;">내 비품 대여
-				내역</a>
-			<!-- main.jsp 헤더에 추가 -->
-			<a href="managerApproval.do" class="logout-btn"
-				style="background-color: #673AB7; margin-right: 10px;">관리자 결재함</a>
-			<!-- V3 추가: 비품 대여 메뉴 -->
+
+			<!-- 모든 사용자에게 보이는 공통 메뉴 -->
 			<a href="equipmentList.do" class="logout-btn"
 				style="background-color: #FF9800; margin-right: 10px;">비품 대여 신청</a>
-			<!-- '내 예약 조회' 버튼 추가 -->
-			<a href="myReserveList.do" class="logout-btn"
-				style="background-color: #2196F3; margin-right: 10px;">내 예약 조회</a> <a
-				href="logout.do" class="logout-btn">로그아웃</a>
+			<a href="myRentalList.do" class="logout-btn"
+				style="background-color: #00BCD4; margin-right: 10px;">내 비품 대여
+				내역</a> <a href="myReserveList.do" class="logout-btn"
+				style="background-color: #2196F3; margin-right: 10px;">내 예약 조회</a>
+
+			<!-- 관리자에게만 보이는 메뉴 (직급이 '팀장'이거나 부서가 '관리부'인 경우 등) -->
+			<!-- 테스트를 위해 이름이 '관리자' 이거나, 사번이 특정 번호일 때 열리도록 임시 설정 -->
+			<%
+			// 실제 DB 연동 시 loginEmp.getRole() == 1 등으로 처리
+			if ("관리자".equals(loginEmp.getEmpName()) || loginEmp.getEmpNo() == 9999) {
+			%>
+			<a href="managerApproval.do" class="logout-btn"
+				style="background-color: #673AB7; margin-right: 10px;">관리자 결재함</a>
+			<!-- 아래 한 줄을 새로 추가합니다 -->
+			<a href="adminEqList.do" class="logout-btn"
+				style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
+			<%
+			}
+			%>
+
+			<a href="logout.do" class="logout-btn">로그아웃</a>
 		</div>
 	</div>
 

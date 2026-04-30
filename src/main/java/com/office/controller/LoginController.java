@@ -41,7 +41,8 @@ public class LoginController extends HttpServlet {
         EmployeeDTO dto = new EmployeeDTO();
         dto.setEmpNo(202604);
         dto.setLoginId(loginId);
-        dto.setEmpName("테스트사원");
+        //dto.setEmpName("테스트사원");
+        dto.setEmpName("관리자");
         dto.setLoginPw(loginPw);
         
         // 4. 확인 결과에 따른 처리
