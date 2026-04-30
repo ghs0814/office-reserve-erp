@@ -26,7 +26,7 @@ public class ReservationDAO {
             if (conn != null) { // DB 연결이 성공했을 때만 실행
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, dto.getEmpNo());
-                pstmt.setString(2, dto.getRoomCode());
+                pstmt.setString(2, dto.getRoomId());
                 pstmt.setDate(3, dto.getResDate());
                 pstmt.setString(4, dto.getStartTime());
                 pstmt.setString(5, dto.getEndTime());
@@ -92,7 +92,7 @@ public class ReservationDAO {
                     ReservationDTO dto = new ReservationDTO();
                     dto.setResNo(rs.getInt("RES_NO"));
                     dto.setEmpNo(rs.getInt("EMP_NO"));
-                    dto.setRoomCode(rs.getString("ROOM_CODE"));
+                    dto.setRoomId(rs.getString("ROOM_CODE"));
                     dto.setResDate(rs.getDate("RES_DATE"));
                     dto.setStartTime(rs.getString("START_TIME"));
                     dto.setEndTime(rs.getString("END_TIME"));

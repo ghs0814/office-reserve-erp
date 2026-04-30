@@ -39,8 +39,10 @@ public class LoginController extends HttpServlet {
         //로그인 체크 임시 주석처리
      // 2. 가짜 데이터를 강제로 생성
         EmployeeDTO dto = new EmployeeDTO();
+        dto.setEmpNo(202604);
         dto.setLoginId(loginId);
         dto.setEmpName("테스트사원");
+        dto.setLoginPw(loginPw);
         
         // 4. 확인 결과에 따른 처리
         //dto != null
