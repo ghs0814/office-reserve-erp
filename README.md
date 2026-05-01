@@ -141,4 +141,4 @@ resDateInput.addEventListener('change', function() {
 5. `http://localhost:8080/OfficeReserveERP/index.jsp` 로 접속하여 시스템을 시작합니다.
 
 ---
-*개발자: [본인 이름/닉네임 입력] | 연락처: [이메일 또는 깃허브 주소]*
+
