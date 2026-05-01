@@ -3,11 +3,6 @@
 > **"효율적인 자원 관리의 시작, 시각화된 예약과 체계적인 결재 시스템"**
 > 평면도 기반의 시각적 회의실 예약과 5단계 계층형 전자결재를 결합한 사내 ERP 웹 서비스입니다.
 
-![Java](https://img.shields.io/badge/Java-17-007396?style=flat-square&logo=java)
-![JSP/Servlet](https://img.shields.io/badge/JSP%2FServlet-MVC2-F8DC75?style=flat-square)
-![Oracle](https://img.shields.io/badge/Oracle-Database-F80000?style=flat-square&logo=oracle)
-![JavaScript](https://img.shields.io/badge/JavaScript-AJAX-F7DF1E?style=flat-square&logo=javascript)
-
 ---
 
 ## 💡 프로젝트 개요
