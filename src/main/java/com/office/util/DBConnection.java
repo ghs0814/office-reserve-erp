@@ -18,16 +18,16 @@ public class DBConnection {
 			HikariConfig config = new HikariConfig();
 
 			// 오라클 DB 연결 정보 (필요 시 주석 해제 후 사용)
-			config.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-			config.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:xe");
-			config.setUsername("ghs");
-			config.setPassword("0814");
+			// config.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+			// config.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:xe");
+			// config.setUsername("ghs");
+			// config.setPassword("0814");
 
 			// 현재 활성화된 설정: H2 데이터베이스 연결 정보
-			// config.setDriverClassName("org.h2.Driver");
-			// config.setJdbcUrl("jdbc:h2:~/office_db;MODE=Oracle;AUTO_SERVER=TRUE");
-			// config.setUsername("sa");
-			// config.setPassword(""); // H2 기본 비밀번호는 공백입니다.
+			config.setDriverClassName("org.h2.Driver");
+			config.setJdbcUrl("jdbc:h2:~/office_db;MODE=Oracle;AUTO_SERVER=TRUE");
+			config.setUsername("sa");
+			config.setPassword(""); // H2 기본 비밀번호는 공백입니다.
 
 			// 히카리CP 세부 옵션 설정
 			config.setMaximumPoolSize(10); // 동시에 유지할 최대 커넥션 개수
