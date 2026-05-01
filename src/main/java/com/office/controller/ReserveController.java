@@ -9,46 +9,50 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-// main.jsp에서 reserve.do?roomId=... 로 호출하면 이 서블릿이 실행됩니다.
+/**
+ * 회의실 예약 페이지로 진입하기 전 해당 회의실의 정보를 조회하는 컨트롤러입니다.
+ */
 @WebServlet("/reserve.do")
 public class ReserveController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	// location.href를 통한 이동은 기본적으로 GET 방식이므로 doGet을 사용합니다.
+	/**
+     * 메인 지도의 링크 클릭(GET 방식) 시 동작합니다.
+     */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
 		request.setCharacterEncoding("UTF-8");
 		response.setContentType("text/html; charset=UTF-8");
 
+		// 1. 보안을 위해 현재 로그인 상태인지 세션을 먼저 체크합니다.
 		HttpSession session = request.getSession();
 		if (session.getAttribute("loginEmp") == null) {
 			response.sendRedirect("index.jsp");
 			return;
 		}
 
-		// 1. main.jsp에서 넘겨준 방 번호 받기
+		// 2. 메인 페이지(main.jsp)에서 전달해준 회의실 번호(roomId)를 수집합니다.
 		String roomId = request.getParameter("roomId");
 
-		// 2. RoomDAO를 호출하여 DB에서 해당 방의 상세 정보 가져오기, 잠깐 주석
+		// 3. RoomDAO를 통해 데이터베이스에서 해당 회의실의 상세 정보를 가져옵니다.
 		com.office.dao.RoomDAO roomDao = new com.office.dao.RoomDAO();
 		com.office.dto.RoomDTO roomInfo = roomDao.getRoomDetail(roomId);
 
-		// 3. 만약 DB에 없는 잘못된 방 번호라면 메인으로 돌려보내기 (에러 방어)
+		// 4. 예외 방어: 만약 DB에 없는 방 번호가 전달되었다면 메인으로 다시 보냅니다.
 		if (roomInfo == null) {
 			System.out.println("해당 방 정보가 DB에 존재하지 않습니다: " + roomId);
 			response.sendRedirect("main.jsp");
 			return;
 		}
 
-		// 4. 가져온 방 상세 정보(RoomDTO 객체)를 request에 담아서 전달
+		// 5. 조회된 회의실 정보(DTO)를 request에 담아 예약 신청 화면(reserve.jsp)으로 전달합니다.
 		request.setAttribute("roomInfo", roomInfo);
 
 		RequestDispatcher dispatcher = request.getRequestDispatcher("reserve.jsp");
 		dispatcher.forward(request, response);
 	}
 
-	// 만약 POST로 데이터가 들어와도 doGet에서 똑같이 처리하도록 연결해 줍니다.
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		doGet(request, response);

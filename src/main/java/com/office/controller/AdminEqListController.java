@@ -11,20 +11,23 @@ import javax.servlet.http.HttpServletResponse;
 import com.office.dao.EquipmentDAO;
 import com.office.dto.EquipmentDTO;
 
+/**
+ * 관리자용 비품 목록 조회 및 관리 대시보드 컨트롤러
+ */
 @WebServlet("/adminEqList.do")
 public class AdminEqListController extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         
-        // 일반 비품 목록(equipmentList.do)과 동일하게 진짜 DB 데이터를 가져옵니다.
+        // 1. EquipmentDAO를 통해 DB에서 전체 비품 데이터를 가져옵니다.
         EquipmentDAO dao = new EquipmentDAO();
         List<EquipmentDTO> eqList = dao.getAllEquipments(); 
 
-        // JSP에서 사용할 수 있도록 request 영역에 담기
+        // 2. JSP 화면에서 리스트를 출력할 수 있도록 request 객체에 데이터를 담습니다.
         request.setAttribute("eqList", eqList);
         
-        // adminEqList.jsp 화면으로 포워딩
+        // 3. 관리자용 비품 목록 화면(adminEqList.jsp)으로 포워딩(데이터 유지 이동)합니다.
         request.getRequestDispatcher("adminEqList.jsp").forward(request, response);
     }
 }

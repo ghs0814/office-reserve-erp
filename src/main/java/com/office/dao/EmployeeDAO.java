@@ -7,15 +7,21 @@ import java.sql.ResultSet;
 import com.office.dto.EmployeeDTO;
 import com.office.util.DBConnection;
 
+/**
+ * 사원 관련 데이터베이스 연동을 담당하는 클래스입니다.
+ */
 public class EmployeeDAO {
 
-    // 1. 로그인 체크 (아이디와 비밀번호가 일치하면 사원 정보를 반환)
+    /**
+     * 로그인 체크: 아이디와 비밀번호가 일치하면 해당 사원 정보를 DTO에 담아 반환합니다.
+     */
     public EmployeeDTO loginCheck(String loginId, String loginPw) {
         EmployeeDTO dto = null;
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
+        // 아이디와 비밀번호를 조건으로 사원 정보를 조회하는 쿼리
         String sql = "SELECT * FROM EMPLOYEE WHERE LOGIN_ID = ? AND LOGIN_PW = ?";
 
         try {
@@ -26,13 +32,14 @@ public class EmployeeDAO {
                 pstmt.setString(2, loginPw);
                 
                 rs = pstmt.executeQuery();
+                // 일치하는 데이터가 있으면 DTO 객체를 생성하여 채웁니다.
                 if (rs.next()) {
                     dto = new EmployeeDTO();
                     dto.setEmpNo(rs.getInt("EMP_NO"));
                     dto.setLoginId(rs.getString("LOGIN_ID"));
                     dto.setLoginPw(rs.getString("LOGIN_PW"));
                     dto.setEmpName(rs.getString("EMP_NAME"));
-                 // [중요] DB에서 EMP_LEVEL 컬럼 값을 가져와 DTO에 세팅합니다.
+                    // 관리자 권한 확인을 위해 결재 레벨(EMP_LEVEL)을 세팅합니다.
                     dto.setEmpLevel(rs.getInt("EMP_LEVEL"));
                 }
             }
@@ -41,16 +48,18 @@ public class EmployeeDAO {
         } finally {
             closeResource(conn, pstmt, rs);
         }
-        return dto; // 일치하는 정보가 없으면 null 반환
+        return dto; // 일치하는 정보가 없으면 null을 반환합니다.
     }
- // EmployeeDAO.java 안의 insertEmployee 메서드를 통째로 아래 코드로 교체합니다.
 
+    /**
+     * 신규 사원 등록: 회원가입 폼에서 입력받은 데이터를 사원 테이블에 추가합니다.
+     */
     public boolean insertEmployee(EmployeeDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        // EMP_LEVEL에 고정값 1 대신 물음표(?)를 사용합니다.
+        // 입력받은 모든 정보(사번, ID, PW, 이름, 레벨)를 삽입하는 쿼리
         String sql = "INSERT INTO EMPLOYEE (EMP_NO, LOGIN_ID, LOGIN_PW, EMP_NAME, EMP_LEVEL) VALUES (?, ?, ?, ?, ?)";
 
         try {
@@ -61,7 +70,7 @@ public class EmployeeDAO {
                 pstmt.setString(2, dto.getLoginId());
                 pstmt.setString(3, dto.getLoginPw());
                 pstmt.setString(4, dto.getEmpName());
-                pstmt.setInt(5, dto.getEmpLevel()); // 폼에서 받아온 레벨 값을 세팅합니다.
+                pstmt.setInt(5, dto.getEmpLevel()); // 선택한 권한 레벨을 세팅합니다.
 
                 int count = pstmt.executeUpdate();
                 if (count > 0) result = true;
@@ -74,7 +83,9 @@ public class EmployeeDAO {
         return result;
     }
 
-    // 자원 해제 공통 메서드
+    /**
+     * 데이터베이스 자원 해제를 위한 공통 메서드입니다.
+     */
     private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {
             if (rs != null) rs.close();

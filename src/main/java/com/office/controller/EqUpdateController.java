@@ -11,29 +11,36 @@ import javax.servlet.http.HttpServletResponse;
 import com.office.dao.EquipmentDAO;
 import com.office.dto.EquipmentDTO;
 
+/**
+ * 비품 정보를 업데이트하는 로직을 처리하는 컨트롤러입니다.
+ */
 @WebServlet("/updateEq.do")
 public class EqUpdateController extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 인코딩 설정 및 응답 형식 지정
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html; charset=UTF-8");
 
-        // 파라미터 이름을 화면과 일치하도록 totalCount, remainCount로 받습니다.
+        // 1. 수정 폼에서 넘어온 파라미터(비품번호, 이름, 총 수량, 잔여 수량)를 수집합니다.
         int eqNo = Integer.parseInt(request.getParameter("eqNo"));
         String eqName = request.getParameter("eqName");
         int totalCount = Integer.parseInt(request.getParameter("totalCount")); 
         int remainCount = Integer.parseInt(request.getParameter("remainCount")); 
 
+        // 2. 수집된 데이터를 DTO 객체에 세팅하여 업데이트 준비를 합니다.
         EquipmentDTO dto = new EquipmentDTO();
         dto.setEqNo(eqNo);
         dto.setEqName(eqName);
         dto.setTotalCount(totalCount); 
         dto.setRemainCount(remainCount); 
 
+        // 3. DAO를 호출하여 실제 데이터베이스의 비품 정보를 수정합니다.
         EquipmentDAO dao = new EquipmentDAO();
         boolean isSuccess = dao.updateEquipment(dto);
 
+        // 4. 처리 결과에 따라 사용자에게 알림을 띄우고 페이지를 이동시킵니다.
         PrintWriter out = response.getWriter();
         out.println("<script>");
         if (isSuccess) {

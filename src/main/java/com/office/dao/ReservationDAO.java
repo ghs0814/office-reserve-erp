@@ -9,15 +9,17 @@ import java.util.List;
 import com.office.dto.ReservationDTO;
 import com.office.util.DBConnection;
 
+/**
+ * 회의실 예약 데이터 처리를 담당하는 DAO입니다.
+ */
 public class ReservationDAO {
 
-    // 1. 새로운 예약 정보 저장
+    // 1. 새로운 예약 정보 저장 (동시 예약 방지를 위해 synchronized 적용)[cite: 38]
     public synchronized boolean insertReservation(ReservationDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        // ROOM_ID로 컬럼명 통일
         String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) "
                    + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, ?, '예약완료')";
 
@@ -43,7 +45,7 @@ public class ReservationDAO {
         return result;
     }
 
-    // 2. 예약 중복 확인
+    // 2. 예약 중복 확인 (특정 방/날짜/시간에 완료된 예약이 있는지 체크)[cite: 38]
     public boolean checkDuplicate(String roomId, java.sql.Date date, String startTime) {
         boolean isDuplicate = false;
         Connection conn = null;
@@ -73,7 +75,7 @@ public class ReservationDAO {
         return isDuplicate;
     }
 
- // 3. 마이페이지용 내 예약 내역 조회
+    // 3. 내 예약 내역 조회 (최신 예약 순으로 정렬)[cite: 38]
     public List<ReservationDTO> getMyReservations(int empNo) {
         List<ReservationDTO> list = new ArrayList<>();
         Connection conn = null;
@@ -97,7 +99,7 @@ public class ReservationDAO {
                     dto.setResDate(rs.getDate("RES_DATE"));
                     dto.setStartTime(rs.getString("START_TIME"));
                     dto.setEndTime(rs.getString("END_TIME"));
-                    dto.setPurpose(rs.getString("PURPOSE")); // 누락되었던 부분 추가
+                    dto.setPurpose(rs.getString("PURPOSE"));
                     dto.setStatus(rs.getString("STATUS"));
                     list.add(dto);
                 }
@@ -110,7 +112,7 @@ public class ReservationDAO {
         return list;
     }
 
-    // 4. 예약 취소 (상태값 변경)
+    // 4. 예약 취소 (물리 삭제 대신 상태값을 '취소됨'으로 변경)[cite: 38]
     public boolean cancelReservation(int resNo) {
         boolean result = false;
         Connection conn = null;
@@ -135,13 +137,14 @@ public class ReservationDAO {
         return result;
     }
 
-    // 5. AJAX용 예약된 시간 목록 가져오기
+    // 5. 실시간 예약 현황 확인 (특정 방/날짜의 예약된 시간 목록 추출 - AJAX 연동용)[cite: 38]
     public List<String> getReservedTimes(String roomId, String resDate) {
         List<String> reservedTimes = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
+        // '예약완료' 상태인 시간대만 가져옵니다.[cite: 38]
         String sql = "SELECT START_TIME FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND STATUS = '예약완료'";
 
         try {
@@ -157,7 +160,7 @@ public class ReservationDAO {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            closeResource(conn, pstmt, rs); // 자원 해제 추가
+            closeResource(conn, pstmt, rs);
         }
         return reservedTimes;
     }
