@@ -6,6 +6,7 @@
 <meta charset="UTF-8">
 <title>오피스 예약 시스템 - 회원가입</title>
 <style>
+/* 회원가입 화면 레이아웃 및 디자인 설정 */
 body {
 	font-family: 'Malgun Gothic', sans-serif;
 	background-color: #f0f2f5;
@@ -83,23 +84,34 @@ body {
 
 	<div class="join-container">
 		<h2>회원가입</h2>
+		<!-- 회원가입 처리를 담당하는 JoinController(/joinProcess.do)로 POST 전송 -->
 		<form action="joinProcess.do" method="post">
+			
+			<!-- 사번 입력: DB의 PK(기본키)로 사용되며 숫자로 제한 -->
 			<div class="form-group">
 				<label for="empNo">사번 (숫자)</label> <input type="number" id="empNo"
 					name="empNo" required placeholder="예: 2026001">
 			</div>
-			<div class="form-group">
+			
+			<!-- 로그인 아이디 입력 -->
+			<div class="input-group">
 				<label for="loginId">아이디</label> <input type="text" id="loginId"
 					name="loginId" required placeholder="아이디 입력">
 			</div>
+			
+			<!-- 비밀번호 입력 -->
 			<div class="form-group">
 				<label for="loginPw">비밀번호</label> <input type="password"
 					id="loginPw" name="loginPw" required placeholder="비밀번호 입력">
 			</div>
+			
+			<!-- 사원 이름 입력 -->
 			<div class="form-group">
 				<label for="empName">이름</label> <input type="text" id="empName"
 					name="empName" required placeholder="예: 홍길동">
 			</div>
+			
+			<!-- 직급 선택: 5단계 결재 시스템의 근간이 되는 '권한 레벨'을 설정함 -->
 			<div class="form-group">
 				<label for="empLevel">직급 (권한 레벨)</label> <select id="empLevel"
 					name="empLevel" required
@@ -113,6 +125,7 @@ body {
 			</div>
 
 			<button type="submit" class="btn-join">가입하기</button>
+			<!-- 취소 버튼 클릭 시 다시 로그인 화면으로 돌아감 -->
 			<button type="button" class="btn-back"
 				onclick="location.href='index.jsp'">취소</button>
 		</form>

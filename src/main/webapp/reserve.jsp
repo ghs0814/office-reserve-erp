@@ -2,6 +2,7 @@
 <%@ page import="com.office.dto.EmployeeDTO" %>
 <%@ page import="com.office.dto.RoomDTO" %>
 <%
+    // 1. 보안 체크 및 예약에 필요한 방 정보를 request에서 가져옵니다.
     EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
     if (loginEmp == null) {
         response.sendRedirect("index.jsp");
@@ -21,6 +22,7 @@
 <meta charset="UTF-8">
 <title>오피스 예약 시스템 - 예약 신청</title>
 <style>
+    /* 화면 레이아웃 및 디자인 설정 */
     body {
         font-family: 'Malgun Gothic', sans-serif;
         background-color: #f0f2f5;
@@ -75,7 +77,7 @@
         box-sizing: border-box;
     }
     
-    /* 시간 선택 버튼 그리드 스타일 */
+    /* 시간 선택 버튼 그리드 스타일 (4열 배치) */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -100,14 +102,14 @@
         color: #ff5722;
     }
 
-    /* 선택되었을 때의 스타일 */
+    /* 선택된 시간 버튼 스타일 */
     .time-btn.active {
         background-color: #ff5722;
         color: white;
         border-color: #ff5722;
     }
 
-    /* 예약 마감(비활성화) 스타일 - 추후 AJAX 연동 시 사용됨 */
+    /* 이미 예약된 시간(비활성화) 버튼 스타일 */
     .time-btn:disabled {
         background-color: #f5f5f5;
         color: #ccc;
@@ -160,26 +162,22 @@
 </style>
 
 <script>
-    // 페이지 로드 시 시간 버튼 이벤트 등록
+    // 2. 시간 선택 버튼 이벤트 및 자동 시간 계산 로직
     document.addEventListener("DOMContentLoaded", function() {
         const timeButtons = document.querySelectorAll('.time-btn');
         
         timeButtons.forEach(btn => {
             btn.addEventListener('click', function() {
-                // 비활성화된 버튼은 클릭 방지
                 if(this.disabled) return;
 
-                // 1. 모든 버튼의 활성화 상태 해제
+                // 모든 버튼 비활성화 해제 후 현재 버튼 활성화
                 timeButtons.forEach(b => b.classList.remove('active'));
-                
-                // 2. 클릭한 버튼 활성화
                 this.classList.add('active');
                 
-                // 3. 숨겨진 input에 시작 시간 세팅
+                // 선택한 시작 시간과 자동으로 계산된 종료 시간(1시간 뒤)을 hidden input에 세팅
                 const selectedTime = this.getAttribute('data-time');
                 document.getElementById('startTime').value = selectedTime;
                 
-                // 4. 종료 시간 자동 계산 (1시간 뒤)
                 let hour = parseInt(selectedTime.split(':')[0]);
                 let endHour = hour + 1;
                 let endTimeStr = (endHour < 10 ? '0' + endHour : endHour) + ':00';
@@ -188,18 +186,17 @@
         });
     });
 
+    // 3. 입력 데이터 유효성 검사 (과거 날짜 예약 방지 등)
     function validateForm() {
         const resDateInput = document.getElementById("resDate").value;
         const startTimeInput = document.getElementById("startTime").value;
         const purposeInput = document.getElementById("purpose").value;
 
-        // 1. 날짜 입력 확인
         if (!resDateInput) {
             alert("예약 날짜를 선택해주세요.");
             return false;
         }
 
-        // 2. 과거 날짜 선택 방지
         const selectedDate = new Date(resDateInput);
         const today = new Date();
         today.setHours(0, 0, 0, 0); 
@@ -209,13 +206,11 @@
             return false; 
         }
 
-        // 3. 시간 선택 확인
         if (!startTimeInput) {
             alert("예약하실 시간을 선택해주세요.");
             return false;
         }
 
-        // 4. 목적 입력 확인
         if (!purposeInput.trim()) {
             alert("사용 목적을 입력해주세요.");
             return false;
@@ -224,29 +219,29 @@
         return true; 
     }
     
+    // 4. [AJAX] 날짜 변경 시 해당 일자의 이미 예약된 시간 목록을 가져와서 버튼을 비활성화함
     document.addEventListener("DOMContentLoaded", function() {
         const resDateInput = document.getElementById("resDate");
         const timeButtons = document.querySelectorAll('.time-btn');
         const roomId = "<%= roomInfo.getRoomId() %>";
 
-        // 날짜 변경 이벤트 리스너
         resDateInput.addEventListener('change', function() {
             const selectedDate = this.value;
             if (!selectedDate) return;
 
-            // AJAX 요청 (fetch API 사용)
+            // Fetch API를 사용하여 비동기적으로 중복 예약 시간 조회
             fetch('checkReservedTime.do?roomId=' + roomId + '&resDate=' + selectedDate)
                 .then(response => response.json())
                 .then(reservedTimes => {
-                    // 1. 모든 버튼 초기화 (활성화)
+                    // 모든 버튼 활성화 초기화 및 선택 값 제거
                     timeButtons.forEach(btn => {
                         btn.disabled = false;
-                        btn.classList.remove('active'); // 날짜 바뀌면 선택했던 것도 해제
+                        btn.classList.remove('active');
                     });
                     document.getElementById('startTime').value = "";
                     document.getElementById('endTime').value = "";
 
-                    // 2. 서버에서 받아온 예약된 시간과 일치하는 버튼 비활성화
+                    // 조회된 데이터에 포함된 시간 버튼들만 비활성화 처리
                     timeButtons.forEach(btn => {
                         if (reservedTimes.includes(btn.getAttribute('data-time'))) {
                             btn.disabled = true;
@@ -255,8 +250,6 @@
                 })
                 .catch(error => console.error('Error:', error));
         });
-
-        // (기존 버튼 클릭 이벤트 로직은 그대로 유지)
     });
 </script>
 
@@ -266,6 +259,7 @@
 <div class="reserve-container">
     <h2>회의실 예약 신청</h2>
     
+    <!-- 5. 선택한 회의실의 수용 인원 및 장비 정보를 상단 박스에 표시 -->
     <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
         <h3 style="margin: 0 0 10px 0; color: #1976d2;">
             [ <%= roomInfo.getRoomId() %>호 ] <%= roomInfo.getRoomName() %>
@@ -279,13 +273,14 @@
         </p>
     </div>
     
+    <!-- 6. 예약 처리를 위한 폼 구성 (ReserveProcessController로 연결) -->
     <form action="reserveProcess.do" method="post" onsubmit="return validateForm();">
         
         <input type="hidden" name="roomId" value="<%= roomInfo.getRoomId() %>">
         <input type="hidden" name="empNo" value="<%= loginEmp.getEmpNo() %>">
         <input type="hidden" name="status" value="예약완료">
         
-        <!-- 자바스크립트로 값이 채워질 숨김 필드 -->
+        <!-- 버튼 클릭 시 자바스크립트로 세팅될 숨김 데이터 -->
         <input type="hidden" id="startTime" name="startTime">
         <input type="hidden" id="endTime" name="endTime">
         
@@ -297,7 +292,7 @@
         <div class="form-group">
             <label>시간 선택</label>
             <div class="time-grid" id="timeGrid">
-                <!-- data-time 속성에 실제 들어갈 값을 지정합니다 -->
+                <!-- data-time 속성의 값을 기준으로 예약 중복 여부를 체크합니다 -->
                 <button type="button" class="time-btn" data-time="09:00">09:00</button>
                 <button type="button" class="time-btn" data-time="10:00">10:00</button>
                 <button type="button" class="time-btn" data-time="11:00">11:00</button>

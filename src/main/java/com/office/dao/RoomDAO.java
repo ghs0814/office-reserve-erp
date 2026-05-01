@@ -7,16 +7,20 @@ import java.sql.ResultSet;
 import com.office.dto.RoomDTO;
 import com.office.util.DBConnection;
 
+/**
+ * 회의실 마스터 정보를 조회하는 DAO입니다.
+ */
 public class RoomDAO {
 
-    // 특정 방 번호(roomId)를 넘겨주면, 그 방의 상세 정보를 DB에서 찾아 DTO로 돌려주는 메서드
+    /**
+     * 특정 회의실 상세 정보 조회: 방 번호(roomId)로 해당 실의 전체 정보를 가져옵니다.[cite: 39]
+     */
     public RoomDTO getRoomDetail(String roomId) {
         RoomDTO dto = null;
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        // ROOM_CODE를 ROOM_ID로 올바르게 수정했습니다.
         String sql = "SELECT * FROM ROOM WHERE ROOM_ID = ?";
 
         try {
@@ -26,10 +30,9 @@ public class RoomDAO {
                 pstmt.setString(1, roomId);
                 rs = pstmt.executeQuery();
 
-                // 결과가 있다면 DTO 객체에 포장하기
+                // 데이터가 존재하면 DTO 객체에 각 컬럼 값을 매핑합니다.[cite: 39]
                 if (rs.next()) {
                     dto = new RoomDTO();
-                    // 여기도 DB 컬럼명에 맞춰 ROOM_ID로 수정했습니다.
                     dto.setRoomId(rs.getString("ROOM_ID"));
                     dto.setRoomName(rs.getString("ROOM_NAME"));
                     dto.setCapacity(rs.getInt("CAPACITY"));
@@ -40,6 +43,7 @@ public class RoomDAO {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            // 자원 해제[cite: 39]
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();

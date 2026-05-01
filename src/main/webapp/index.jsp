@@ -17,7 +17,7 @@ body {
 	margin: 0;
 }
 
-/* 로그인 박스 컨테이너 */
+/* 로그인 박스 컨테이너 스타일 */
 .login-container {
 	background-color: white;
 	padding: 40px;
@@ -33,7 +33,7 @@ body {
 	font-size: 24px;
 }
 
-/* 입력 필드 (아이디, 비밀번호) */
+/* 입력 필드 (아이디, 비밀번호) 공통 스타일 */
 .input-group {
 	margin-bottom: 15px;
 	text-align: left;
@@ -48,14 +48,14 @@ body {
 	font-size: 14px;
 }
 
-/* 포커스 시 입력 필드 강조 */
+/* 포커스 시 입력 필드 강조 효과 */
 .input-group input:focus {
 	border-color: #4CAF50;
 	outline: none;
 	box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
 }
 
-/* 로그인 버튼 */
+/* 로그인 및 버튼 공통 스타일 */
 .btn-login {
 	width: 100%;
 	padding: 12px;
@@ -80,25 +80,26 @@ body {
 		<h2>오피스 예약 시스템</h2>
 
 		<!-- 
-        form: 데이터를 묶어서 전송하는 영역입니다.
-        action="login.do": 전송할 목적지 (서블릿 주소)입니다.
-        method="post": 비밀번호 같은 민감한 정보를 숨겨서 전송합니다.
+        form: 사용자가 입력한 데이터를 서버(Controller)로 전송하는 영역
+        action="login.do": 전송 목적지 (LoginController 서블릿 주소)
+        method="post": URL에 데이터를 노출하지 않고 안전하게 전송 (비밀번호 보안)
     -->
 		<form action="login.do" method="post">
 
-			<!-- 사번 입력란. name="loginId" 가 자바에서 데이터를 받을 때 쓰는 핵심 키워드입니다. -->
+			<!-- 사번 입력란: name="loginId" 키워드를 통해 서버에서 입력값을 식별함 -->
 			<div class="input-group">
 				<input type="text" name="loginId" placeholder="사번 (아이디)" required
 					autofocus>
 			</div>
 
-			<!-- 비밀번호 입력란. name="loginPw" -->
+			<!-- 비밀번호 입력란: name="loginPw" -->
 			<div class="input-group">
 				<input type="password" name="loginPw" placeholder="비밀번호" required>
 			</div>
 
-			<!-- 버튼을 누르면 form 안의 데이터가 action 주소로 넘어갑니다. -->
+			<!-- submit 버튼: 클릭 시 form 내부의 데이터를 action 경로로 전송 -->
 			<button type="submit" class="btn-login">로그인</button>
+			<!-- 회원가입 버튼: 클릭 시 join.jsp 화면으로 이동 -->
 			<button type="button" class="btn-login"
 				style="background-color: #2196F3; margin-top: 10px;"
 				onclick="location.href='join.jsp'">회원가입</button>

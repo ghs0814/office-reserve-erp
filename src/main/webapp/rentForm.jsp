@@ -2,9 +2,11 @@
 <%@ page import="com.office.dto.EmployeeDTO" %>
 <%@ page import="com.office.dto.EquipmentDTO" %>
 <%
+    // 1. 세션과 request 영역에서 로그인 정보 및 선택한 비품 정보를 가져옵니다.
     EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
     EquipmentDTO eqInfo = (EquipmentDTO) request.getAttribute("equipment");
     
+    // 비정상적인 접근(로그인 누락 등) 시 메인으로 돌려보냅니다.
     if (loginEmp == null || eqInfo == null) {
         response.sendRedirect("main.jsp");
         return;
@@ -16,6 +18,7 @@
 <meta charset="UTF-8">
 <title>오피스 예약 시스템 - 비품 대여 신청</title>
 <style>
+    /* 폼 레이아웃 및 디자인 설정 */
     body {
         font-family: 'Malgun Gothic', sans-serif;
         background-color: #f0f2f5;
@@ -37,6 +40,7 @@
         color: #333;
         margin-bottom: 20px;
     }
+    /* 상단 비품 정보 요약 박스 스타일 */
     .info-box {
         background-color: #fff3e0;
         padding: 15px;
@@ -89,6 +93,10 @@
     }
 </style>
 <script>
+    /**
+     * 대여 기간 유효성 검사 함수
+     * 반납일이 대여일보다 과거일 경우 제출을 중단합니다.
+     */
     function validateRentForm() {
         const rentalDate = document.getElementById("rentalDate").value;
         const returnDate = document.getElementById("returnDate").value;
@@ -106,12 +114,15 @@
 <div class="form-container">
     <h2>비품 대여 신청서</h2>
     
+    <!-- 2. 신청 대상 비품의 이름과 신청자 성명을 화면에 표시 -->
     <div class="info-box">
         <h3 style="margin:0 0 10px 0; color:#e65100;"><%= eqInfo.getEqName() %></h3>
         <p style="margin:0; font-size:14px; color:#555;">신청자: <%= loginEmp.getEmpName() %></p>
     </div>
 
+    <!-- 3. 대여 처리를 위한 데이터 전송 폼 (RentProcessController로 연결) -->
     <form action="rentProcess.do" method="post" onsubmit="return validateRentForm();">
+        <!-- 서버 처리를 위해 비품번호와 사원번호를 숨김 필드로 전송 -->
         <input type="hidden" name="eqNo" value="<%= eqInfo.getEqNo() %>">
         <input type="hidden" name="empNo" value="<%= loginEmp.getEmpNo() %>">
         
