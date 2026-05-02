@@ -11,9 +11,9 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeDTO {
-    private int empNo;      // 사원 번호 (고유 식별자)
-    private String loginId; // 로그인용 아이디
-    private String loginPw; // 로그인용 비밀번호
-    private String empName; // 사원 성명
-    private int empLevel;   // 5단계 결재 시스템용 권한 레벨 (일반 0, 최고관리자 5)
+	private int empNo;      // 사번
+    private String empPw;      // 비밀번호
+    private String empName;    // 이름
+    private int empLevel;      // 직급
+    private String manager;    // 관리자 여부 (Y/N)
 }

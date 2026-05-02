@@ -140,3 +140,35 @@ DROP TABLE IF EXISTS EMPLOYEE;
 DROP SEQUENCE IF EXISTS SEQ_RESERVATION;
 DROP SEQUENCE IF EXISTS SEQ_RENTAL;
 DROP SEQUENCE IF EXISTS SEQ_EQUIPMENT;
+
+
+
+-- 기존 테이블 삭제 (H2의 경우 CASCADE CONSTRAINTS 부분을 지우고 CASCADE만 쓰셔도 됩니다)
+DROP TABLE EMPLOYEE CASCADE CONSTRAINTS; 
+
+-- 사번을 정수형(NUMBER)으로 변경한 사원 테이블 다시 생성
+CREATE TABLE EMPLOYEE (
+    emp_no NUMBER PRIMARY KEY,           -- 사번 (문자열 -> 정수형으로 변경)
+    emp_pw VARCHAR(50),                  -- 비밀번호
+    emp_name VARCHAR(50) NOT NULL,       -- 이름
+    emp_level NUMBER NOT NULL,           -- 직급 (1~5)
+    manager VARCHAR(1) DEFAULT 'N'       -- 관리자 여부 (기본값 N)
+);
+
+-- 초기 5명 사원 데이터 다시 삽입 (사번을 순수 숫자로 입력)
+INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
+VALUES (1, '김대표', 5, 'Y');
+
+INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
+VALUES (2, '이차장', 4, 'N');
+
+INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
+VALUES (3, '박과장', 3, 'N');
+
+INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
+VALUES (4, '최대리', 2, 'N');
+
+INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
+VALUES (5, '정사원', 1, 'N');
+
+COMMIT;
