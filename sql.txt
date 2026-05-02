@@ -1,20 +1,37 @@
+-- ==========================================
+-- 0. 기존 테이블 및 시퀀스 초기화 (처음 실행 시 에러 발생해도 무시)
+-- ==========================================
+DROP SEQUENCE SEQ_RESERVATION;
+DROP SEQUENCE SEQ_RENTAL;
 
+DROP TABLE RENTAL_HISTORY CASCADE CONSTRAINTS;
+DROP TABLE RESERVATION CASCADE CONSTRAINTS;
+DROP TABLE EQUIPMENT CASCADE CONSTRAINTS;
+DROP TABLE ROOM CASCADE CONSTRAINTS;
+DROP TABLE EMPLOYEE CASCADE CONSTRAINTS;
+
+-- ==========================================
+-- 1. 시퀀스 생성
+-- ==========================================
 -- 예약 번호 생성용 시퀀스
 CREATE SEQUENCE SEQ_RESERVATION START WITH 1 INCREMENT BY 1;
 
 -- 비품 대여 번호 생성용 시퀀스
 CREATE SEQUENCE SEQ_RENTAL START WITH 1 INCREMENT BY 1;
 
--- 1. 사원 테이블
+-- ==========================================
+-- 2. 테이블 생성 (DTO 기준 최신화 완료)
+-- ==========================================
+-- 1. 사원 테이블 (EmployeeDTO 기준)
 CREATE TABLE EMPLOYEE (
     EMP_NO NUMBER PRIMARY KEY,
-    LOGIN_ID VARCHAR2(50) UNIQUE NOT NULL,
-    LOGIN_PW VARCHAR2(50) NOT NULL,
+    EMP_PW VARCHAR2(50),
     EMP_NAME VARCHAR2(50) NOT NULL,
-    EMP_LEVEL NUMBER DEFAULT 0 -- 0: 일반사원, 1~5: 결재권자
+    EMP_LEVEL NUMBER NOT NULL,
+    MANAGER VARCHAR2(1) DEFAULT 'N'
 );
 
--- 2. 회의실(오피스) 정보 테이블
+-- 2. 회의실 테이블 (RoomDTO 기준)
 CREATE TABLE ROOM (
     ROOM_ID VARCHAR2(20) PRIMARY KEY,
     ROOM_NAME VARCHAR2(100) NOT NULL,
@@ -23,7 +40,7 @@ CREATE TABLE ROOM (
     DESCRIPTION VARCHAR2(500)
 );
 
--- 3. 비품 마스터 테이블
+-- 3. 비품 마스터 테이블 (EquipmentDTO 기준)
 CREATE TABLE EQUIPMENT (
     EQ_NO NUMBER PRIMARY KEY,
     EQ_NAME VARCHAR2(100) NOT NULL,
@@ -31,7 +48,7 @@ CREATE TABLE EQUIPMENT (
     REMAIN_COUNT NUMBER DEFAULT 0
 );
 
--- 4. 예약 테이블 (사원 및 회의실 참조)
+-- 4. 예약 테이블 (ReservationDTO 기준)
 CREATE TABLE RESERVATION (
     RES_NO NUMBER PRIMARY KEY,
     EMP_NO NUMBER REFERENCES EMPLOYEE(EMP_NO),
@@ -43,9 +60,10 @@ CREATE TABLE RESERVATION (
     STATUS VARCHAR2(20) DEFAULT '예약완료'
 );
 
--- 5. 비품 대여 이력 및 결재 테이블 (사원 및 비품 참조)
+-- 5. 비품 대여 이력 테이블 (RentalHistoryDTO 최신 반영: TITLE, 날짜 컬럼 추가)
 CREATE TABLE RENTAL_HISTORY (
     RENTAL_NO NUMBER PRIMARY KEY,
+    TITLE VARCHAR2(100),
     EMP_NO NUMBER REFERENCES EMPLOYEE(EMP_NO),
     EQ_NO NUMBER REFERENCES EQUIPMENT(EQ_NO),
     RENTAL_DATE DATE NOT NULL,
@@ -53,122 +71,48 @@ CREATE TABLE RENTAL_HISTORY (
     STATUS VARCHAR2(20) DEFAULT '승인대기',
     APPROVAL_STEP NUMBER DEFAULT 1,
     SIGN1 VARCHAR2(50),
+    SIGN1_DATE DATE,
     SIGN2 VARCHAR2(50),
+    SIGN2_DATE DATE,
     SIGN3 VARCHAR2(50),
+    SIGN3_DATE DATE,
     SIGN4 VARCHAR2(50),
-    SIGN5 VARCHAR2(50)
+    SIGN4_DATE DATE,
+    SIGN5 VARCHAR2(50),
+    SIGN5_DATE DATE
 );
 
--- 1. 내역 데이터 삭제 (자식 테이블)
-DELETE FROM RENTAL_HISTORY;
-DELETE FROM RESERVATION;
+-- ==========================================
+-- 3. 기초 데이터 삽입 (INSERT)
+-- ==========================================
+-- 사원 데이터
+INSERT INTO EMPLOYEE (EMP_NO, EMP_PW, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (1, '1234', '김대표', 5, 'Y');
+INSERT INTO EMPLOYEE (EMP_NO, EMP_PW, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (2, '1234', '이차장', 4, 'N');
+INSERT INTO EMPLOYEE (EMP_NO, EMP_PW, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (3, '1234', '박과장', 3, 'N');
+INSERT INTO EMPLOYEE (EMP_NO, EMP_PW, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (4, '1234', '최대리', 2, 'N');
+INSERT INTO EMPLOYEE (EMP_NO, EMP_PW, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (5, '1234', '정사원', 1, 'N');
 
--- 2. 기초 정보 데이터 삭제 (부모 테이블)
-DELETE FROM EQUIPMENT;
-DELETE FROM ROOM;
-DELETE FROM EMPLOYEE;
+-- 회의실 데이터
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('401', '그랜드 컨퍼런스룸', 25, 'Y', '전사 회의 및 대규모 세미나가 가능한 가장 큰 공간입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('402', '비즈니스 미팅룸', 10, 'Y', '임원 회의 및 외부 손님 접대에 적합한 고급 미팅룸입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('403', '팀 프로젝트룸', 8, 'N', '팀 단위 브레인스토밍과 아이디어 회의를 위한 공간입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('404', '집중 업무실', 4, 'N', '소규모 인원이 단기간 집중적으로 협업할 때 사용하는 방입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('Interview', 'HR 면접실', 4, 'N', '채용 면접 및 1:1 상담을 위한 독립된 조용한 공간입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('Consult', '파트너 상담실', 6, 'Y', '협력사 미팅 및 기술 상담을 위해 화이트보드가 구비된 방입니다.');
+INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) VALUES ('Meeting', '라운지 미팅룸', 12, 'Y', '자유로운 분위기에서 캐주얼하게 회의할 수 있는 개방형 공간입니다.');
 
--- 사원 번호, 아이디, 비밀번호, 이름, 레벨 순서
-INSERT INTO EMPLOYEE VALUES (1001, 'user1', '1234', '김철수 사원', 1);
-INSERT INTO EMPLOYEE VALUES (2001, 'admin2', '1234', '이팀장', 2);
-INSERT INTO EMPLOYEE VALUES (3001, 'admin3', '1234', '박부장', 3);
-INSERT INTO EMPLOYEE VALUES (4001, 'admin4', '1234', '최상무', 4);
-INSERT INTO EMPLOYEE VALUES (5001, 'admin5', '1234', '정사장', 5);
-
--- 기존 방 데이터가 있다면 삭제 (선택 사항)
-DELETE FROM ROOM;
-
--- 4층 전체 회의실 데이터 삽입
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('401', '그랜드 컨퍼런스룸', 25, 'Y', '전사 회의 및 대규모 세미나가 가능한 가장 큰 공간입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('402', '비즈니스 미팅룸', 10, 'Y', '임원 회의 및 외부 손님 접대에 적합한 고급 미팅룸입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('403', '팀 프로젝트룸', 8, 'N', '팀 단위 브레인스토밍과 아이디어 회의를 위한 공간입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('404', '집중 업무실', 4, 'N', '소규모 인원이 단기간 집중적으로 협업할 때 사용하는 방입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('Interview', 'HR 면접실', 4, 'N', '채용 면접 및 1:1 상담을 위한 독립된 조용한 공간입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('Consult', '파트너 상담실', 6, 'Y', '협력사 미팅 및 기술 상담을 위해 화이트보드가 구비된 방입니다.');
-
-INSERT INTO ROOM (ROOM_ID, ROOM_NAME, CAPACITY, HAS_BEAM, DESCRIPTION) 
-VALUES ('Meeting', '라운지 미팅룸', 12, 'Y', '자유로운 분위기에서 캐주얼하게 회의할 수 있는 개방형 공간입니다.');
-
--- 기존 비품 데이터가 있다면 삭제 (선택 사항)
-DELETE FROM EQUIPMENT;
-
--- 비품 번호(시퀀스 혹은 직접입력), 이름, 총 수량, 잔여 수량
--- 노트북/태블릿 계열
+-- 비품 데이터 (TOTAL_COUNT, REMAIN_COUNT 기준)
 INSERT INTO EQUIPMENT VALUES (1, 'MacBook Pro 16형 (M3)', 5, 5);
 INSERT INTO EQUIPMENT VALUES (2, 'LG Gram 15형 (White)', 8, 8);
 INSERT INTO EQUIPMENT VALUES (3, 'iPad Pro 12.9 (6세대)', 3, 3);
-
--- 모니터/디스플레이
 INSERT INTO EQUIPMENT VALUES (4, 'Dell 32인치 4K 모니터', 10, 10);
 INSERT INTO EQUIPMENT VALUES (5, 'LG 27인치 QHD 모니터', 15, 15);
 INSERT INTO EQUIPMENT VALUES (6, '휴대용 빔 프로젝터', 2, 2);
-
--- 주변기기/입력장치
 INSERT INTO EQUIPMENT VALUES (7, '로지텍 MX Master 3S 마우스', 20, 20);
 INSERT INTO EQUIPMENT VALUES (8, '레오폴드 기계식 키보드', 10, 10);
 INSERT INTO EQUIPMENT VALUES (9, '와콤 신티크 타블렛', 2, 2);
-
--- 케이블/허브/기타
 INSERT INTO EQUIPMENT VALUES (10, 'USB-C 멀티 허브 (8-in-1)', 15, 15);
 INSERT INTO EQUIPMENT VALUES (11, '애플 펜슬 (2세대)', 5, 5);
 INSERT INTO EQUIPMENT VALUES (12, '보조배터리 20,000mAh', 12, 12);
-
-COMMIT;
-
-
--- 자식 테이블 먼저 삭제
-DROP TABLE IF EXISTS RENTAL_HISTORY;
-DROP TABLE IF EXISTS RESERVATION;
-
--- 부모 테이블 삭제
-DROP TABLE IF EXISTS ROOM;
-DROP TABLE IF EXISTS EQUIPMENT;
-DROP TABLE IF EXISTS EMPLOYEE;
-
--- 시퀀스 삭제
-DROP SEQUENCE IF EXISTS SEQ_RESERVATION;
-DROP SEQUENCE IF EXISTS SEQ_RENTAL;
-DROP SEQUENCE IF EXISTS SEQ_EQUIPMENT;
-
-
-
--- 기존 테이블 삭제 (H2의 경우 CASCADE CONSTRAINTS 부분을 지우고 CASCADE만 쓰셔도 됩니다)
-DROP TABLE EMPLOYEE CASCADE CONSTRAINTS; 
-
--- 사번을 정수형(NUMBER)으로 변경한 사원 테이블 다시 생성
-CREATE TABLE EMPLOYEE (
-    emp_no NUMBER PRIMARY KEY,           -- 사번 (문자열 -> 정수형으로 변경)
-    emp_pw VARCHAR(50),                  -- 비밀번호
-    emp_name VARCHAR(50) NOT NULL,       -- 이름
-    emp_level NUMBER NOT NULL,           -- 직급 (1~5)
-    manager VARCHAR(1) DEFAULT 'N'       -- 관리자 여부 (기본값 N)
-);
-
--- 초기 5명 사원 데이터 다시 삽입 (사번을 순수 숫자로 입력)
-INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
-VALUES (1, '김대표', 5, 'Y');
-
-INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
-VALUES (2, '이차장', 4, 'N');
-
-INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
-VALUES (3, '박과장', 3, 'N');
-
-INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
-VALUES (4, '최대리', 2, 'N');
-
-INSERT INTO EMPLOYEE (emp_no, emp_name, emp_level, manager) 
-VALUES (5, '정사원', 1, 'N');
 
 COMMIT;

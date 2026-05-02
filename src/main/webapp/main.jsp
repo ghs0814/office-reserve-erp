@@ -108,20 +108,15 @@ body {
 			<a href="myReserveList.do" class="logout-btn"
 				style="background-color: #2196F3; margin-right: 10px;">내 예약 조회</a>
 
-			<!-- 3. 권한 레벨(empLevel)이 2 이상인 관리자(팀장급 이상)에게만 보이는 전용 메뉴 -->
-			<%
-			if (loginEmp.getEmpLevel() >= 2) {
-			%>
-			<a href="managerApproval.do" class="logout-btn"
-				style="background-color: #673AB7; margin-right: 10px;">관리자 결재함</a>
-			<a href="adminEqList.do" class="logout-btn"
-				style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
-			<%
-			}
-			%>
+			
+			
+			<a href="documentList.do" class="logout-btn"
+			 style="background-color: #4CAF50; margin-right: 10px;">기안 문서함</a>	
 
 			<!-- 4. 최고 관리자(manager='Y') 전용 사원 관리 페이지 버튼 -->
 			<% if ("Y".equals(loginEmp.getManager())) { %>
+				<a href="adminEqList.do" class="logout-btn"
+				style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
 				<a href="admin.do" class="logout-btn"
 					style="background-color: #333; margin-right: 10px;">사원 관리</a>
 			<% } %>
