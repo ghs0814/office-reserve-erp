@@ -98,29 +98,19 @@ body {
 			<% if ("Y".equals(loginEmp.getManager())) { %>
 				<span style="color: #d9534f; font-weight: bold;">[관리자]</span>
 			<% } %>
-			<b><%=loginEmp.getEmpName()%></b>님 환영합니다.
+			<span style="margin-right: 15px;"><b><%=loginEmp.getEmpName()%></b>님 환영합니다.</span>
 
-			<!-- 2. 모든 사용자(전 직급)에게 공통으로 보이는 메뉴 -->
-			<a href="equipmentList.do" class="logout-btn"
-				style="background-color: #FF9800; margin-right: 10px; margin-left: 15px;">비품 대여 신청</a>
-			<a href="myRentalList.do" class="logout-btn"
-				style="background-color: #00BCD4; margin-right: 10px;">내 비품 대여 내역</a>
-			<a href="myReserveList.do" class="logout-btn"
-				style="background-color: #2196F3; margin-right: 10px;">내 예약 조회</a>
-
-			
-			
-			<a href="documentList.do" class="logout-btn"
-			 style="background-color: #4CAF50; margin-right: 10px;">기안 문서함</a>	
-
-			<!-- 4. 최고 관리자(manager='Y') 전용 사원 관리 페이지 버튼 -->
+			<!-- 1. 최고 관리자(manager='Y') 전용 사원 관리 및 재고 관리 버튼 -->
 			<% if ("Y".equals(loginEmp.getManager())) { %>
-				<a href="adminEqList.do" class="logout-btn"
-				style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
-				<a href="admin.do" class="logout-btn"
-					style="background-color: #333; margin-right: 10px;">사원 관리</a>
+				<a href="adminEqList.do" class="logout-btn" style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
+				<a href="admin.do" class="logout-btn" style="background-color: #333; margin-right: 10px;">사원 관리</a>
 			<% } %>
 
+			<!-- 2. 모든 사용자(전 직급)에게 공통으로 보이는 메뉴 -->
+			<a href="equipmentList.do" class="logout-btn" style="background-color: #FF9800; margin-right: 10px;">비품 대여 신청</a>
+			<a href="documentList.do" class="logout-btn" style="background-color: #4CAF50; margin-right: 10px;">기안 문서함</a>	
+			<a href="myPage.do" class="logout-btn" style="background-color: #00BCD4; margin-right: 10px;">마이페이지</a>
+			
 			<a href="logout.do" class="logout-btn">로그아웃</a>
 		</div>
 	</div>

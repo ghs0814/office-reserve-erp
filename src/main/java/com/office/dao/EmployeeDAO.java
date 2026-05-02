@@ -116,65 +116,103 @@ public class EmployeeDAO {
 		}
 		return list;
 	}
+
 	// 1. 사원 직급 변경
-    public boolean updateEmployeeLevel(int empNo, int newLevel) {
-        boolean result = false;
-        String sql = "UPDATE EMPLOYEE SET emp_level = ? WHERE emp_no = ?";
+	public boolean updateEmployeeLevel(int empNo, int newLevel) {
+		boolean result = false;
+		String sql = "UPDATE EMPLOYEE SET emp_level = ? WHERE emp_no = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, newLevel);
-            pstmt.setInt(2, empNo);
-            
-            if (pstmt.executeUpdate() > 0) result = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
+			pstmt.setInt(1, newLevel);
+			pstmt.setInt(2, empNo);
 
-    // 2. 관리자 권한 이양 (기존 관리자는 N, 새 관리자는 Y로 변경)
-    public boolean transferManagerRole(int oldManagerNo, int newManagerNo) {
-        boolean result = false;
-        // 두 개의 쿼리를 실행해야 하므로 수동 커밋 모드를 사용할 수도 있지만, 
-        // 간단하게 두 번의 UPDATE 문을 순차적으로 실행합니다.
-        String sql1 = "UPDATE EMPLOYEE SET manager = 'N' WHERE emp_no = ?";
-        String sql2 = "UPDATE EMPLOYEE SET manager = 'Y' WHERE emp_no = ?";
+			if (pstmt.executeUpdate() > 0)
+				result = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt1 = conn.prepareStatement(sql1);
-             PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
+	// 2. 관리자 권한 이양 (기존 관리자는 N, 새 관리자는 Y로 변경)
+	public boolean transferManagerRole(int oldManagerNo, int newManagerNo) {
+		boolean result = false;
+		// 두 개의 쿼리를 실행해야 하므로 수동 커밋 모드를 사용할 수도 있지만,
+		// 간단하게 두 번의 UPDATE 문을 순차적으로 실행합니다.
+		String sql1 = "UPDATE EMPLOYEE SET manager = 'N' WHERE emp_no = ?";
+		String sql2 = "UPDATE EMPLOYEE SET manager = 'Y' WHERE emp_no = ?";
 
-            // 기존 관리자 권한 박탈
-            pstmt1.setInt(1, oldManagerNo);
-            pstmt1.executeUpdate();
+		try (Connection conn = DBConnection.getConnection();
+				PreparedStatement pstmt1 = conn.prepareStatement(sql1);
+				PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
 
-            // 새 관리자 권한 부여
-            pstmt2.setInt(1, newManagerNo);
-            if (pstmt2.executeUpdate() > 0) result = true;
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
+			// 기존 관리자 권한 박탈
+			pstmt1.setInt(1, oldManagerNo);
+			pstmt1.executeUpdate();
 
-    // 3. 퇴사 처리 (데이터 영구 삭제)
-    // 주의: 실제 실무에서는 DELETE 대신 status='퇴사' 로 UPDATE 하지만, 요청하신 대로 삭제 처리합니다.
-    public boolean deleteEmployee(int empNo) {
-        boolean result = false;
-        String sql = "DELETE FROM EMPLOYEE WHERE emp_no = ?";
+			// 새 관리자 권한 부여
+			pstmt2.setInt(1, newManagerNo);
+			if (pstmt2.executeUpdate() > 0)
+				result = true;
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
 
-            pstmt.setInt(1, empNo);
-            
-            if (pstmt.executeUpdate() > 0) result = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
+	// 사원 비밀번호 변경 메서드
+	public boolean updatePassword(int empNo, String newPw) {
+		boolean result = false;
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+
+		// 해당 사번(EMP_NO)의 비밀번호를 새 비밀번호로 업데이트합니다.
+		String sql = "UPDATE EMPLOYEE SET EMP_PW = ? WHERE EMP_NO = ?";
+
+		try {
+			conn = DBConnection.getConnection();
+			if (conn != null) {
+				pstmt = conn.prepareStatement(sql);
+				pstmt.setString(1, newPw);
+				pstmt.setInt(2, empNo);
+
+				int count = pstmt.executeUpdate();
+				if (count > 0) {
+					result = true;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (pstmt != null)
+					pstmt.close();
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+
+	// 3. 퇴사 처리 (데이터 영구 삭제)
+	// 주의: 실제 실무에서는 DELETE 대신 status='퇴사' 로 UPDATE 하지만, 요청하신 대로 삭제 처리합니다.
+	public boolean deleteEmployee(int empNo) {
+		boolean result = false;
+		String sql = "DELETE FROM EMPLOYEE WHERE emp_no = ?";
+
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setInt(1, empNo);
+
+			if (pstmt.executeUpdate() > 0)
+				result = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
 }
