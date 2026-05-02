@@ -103,6 +103,12 @@ body {
 			<button type="button" class="btn-login"
 				style="background-color: #2196F3; margin-top: 10px;"
 				onclick="location.href='join.jsp'">회원가입</button>
+			<!-- 기존 로그인 폼 안쪽이나 아래쪽에 추가해 주세요 -->
+			<div style="text-align: center; margin-top: 15px;">
+				<a href="findPw.jsp"
+					style="color: #555; text-decoration: none; font-size: 14px; font-weight: bold;">비밀번호를
+					잊으셨나요? (비밀번호 찾기)</a>
+			</div>
 
 		</form>
 	</div>

@@ -215,4 +215,39 @@ public class EmployeeDAO {
 		}
 		return result;
 	}
+	// 사번과 이름으로 비밀번호 찾기 메서드
+    public String findPassword(int empNo, String empName) {
+        String pw = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        // 사번과 이름이 모두 일치하는 데이터의 비밀번호를 가져옵니다.
+        String sql = "SELECT EMP_PW FROM EMPLOYEE WHERE EMP_NO = ? AND EMP_NAME = ?";
+
+        try {
+            conn = DBConnection.getConnection();
+            if (conn != null) {
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, empNo);
+                pstmt.setString(2, empName);
+                rs = pstmt.executeQuery();
+
+                if (rs.next()) {
+                    pw = rs.getString("EMP_PW");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return pw;
+    }
 }
