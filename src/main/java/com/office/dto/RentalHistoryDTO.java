@@ -35,4 +35,6 @@ public class RentalHistoryDTO {
     private int empLevel;          
     private int totalCount;        // 비품 총 수량 (EquipmentDTO와 완전 일치)
     private int remainCount;       // 비품 잔여 수량 (EquipmentDTO와 완전 일치)
+    
+    private int reqCount; //사용자가 신청한 대여 수량
 }

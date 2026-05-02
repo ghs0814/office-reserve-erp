@@ -9,25 +9,18 @@ import java.util.List;
 import com.office.dto.RentalHistoryDTO;
 import com.office.util.DBConnection;
 
-/**
- * 비품 대여 및 다단계 결재 프로세스를 관리하는 DAO입니다.
- */
 public class RentalDAO {
 
-    // =========================================================
-    // 1. [신규 추가] 전자 결재용 완벽 호환 메서드 모음
-    // =========================================================
-
-    // 1-1. 비품 대여 신청 (날짜 컬럼, 기안 제목 포함 및 대여중 즉시 재고 차감)
     public boolean insertRental(RentalHistoryDTO dto) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         PreparedStatement pstmtEq = null;
 
+        // ★ REQ_COUNT 추가됨
         String sql = "INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, "
-                   + "SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE) "
-                   + "VALUES (SEQ_RENTAL.NEXTVAL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                   + "SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE, REQ_COUNT) "
+                   + "VALUES (SEQ_RENTAL.NEXTVAL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             conn = DBConnection.getConnection();
@@ -52,14 +45,18 @@ public class RentalDAO {
             pstmt.setDate(15, dto.getSign4Date());
             pstmt.setString(16, dto.getSign5());
             pstmt.setDate(17, dto.getSign5Date());
+            pstmt.setInt(18, dto.getReqCount()); // ★ 수량 바인딩
 
             int count = pstmt.executeUpdate();
 
             if (count > 0) {
                 if ("대여중".equals(dto.getStatus())) {
-                    String updateEqSql = "UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 1 WHERE EQ_NO = ? AND REMAIN_COUNT > 0";
+                    // ★ 신청 수량만큼 차감
+                    String updateEqSql = "UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - ? WHERE EQ_NO = ? AND REMAIN_COUNT >= ?";
                     pstmtEq = conn.prepareStatement(updateEqSql);
-                    pstmtEq.setInt(1, dto.getEqNo());
+                    pstmtEq.setInt(1, dto.getReqCount());
+                    pstmtEq.setInt(2, dto.getEqNo());
+                    pstmtEq.setInt(3, dto.getReqCount());
                     
                     int eqCount = pstmtEq.executeUpdate();
                     if (eqCount > 0) {
@@ -83,7 +80,6 @@ public class RentalDAO {
         return result;
     }
 
-    // 1-2. 모든 기안 문서(전자 결재) 목록 조회 (모든 등급 열람용)
     public List<RentalHistoryDTO> getAllDocumentList() {
         List<RentalHistoryDTO> list = new ArrayList<>();
         Connection conn = null;
@@ -101,45 +97,16 @@ public class RentalDAO {
             if (conn != null) {
                 pstmt = conn.prepareStatement(sql);
                 rs = pstmt.executeQuery();
-
                 while (rs.next()) {
-                    RentalHistoryDTO dto = new RentalHistoryDTO();
-                    dto.setRentalNo(rs.getInt("RENTAL_NO"));
-                    dto.setEmpNo(rs.getInt("EMP_NO"));
-                    dto.setEqNo(rs.getInt("EQ_NO"));
-                    dto.setRentalDate(rs.getDate("RENTAL_DATE"));
-                    dto.setReturnDate(rs.getDate("RETURN_DATE"));
-                    dto.setStatus(rs.getString("STATUS"));
-                    dto.setApprovalStep(rs.getInt("APPROVAL_STEP"));
-
-                    dto.setSign1(rs.getString("SIGN1"));
-                    dto.setSign2(rs.getString("SIGN2"));
-                    dto.setSign3(rs.getString("SIGN3"));
-                    dto.setSign4(rs.getString("SIGN4"));
-                    dto.setSign5(rs.getString("SIGN5"));
-
-                    dto.setTitle(rs.getString("TITLE"));
-                    dto.setSign1Date(rs.getDate("SIGN1_DATE"));
-                    dto.setSign2Date(rs.getDate("SIGN2_DATE"));
-                    dto.setSign3Date(rs.getDate("SIGN3_DATE"));
-                    dto.setSign4Date(rs.getDate("SIGN4_DATE"));
-                    dto.setSign5Date(rs.getDate("SIGN5_DATE"));
-
-                    dto.setEmpName(rs.getString("EMP_NAME"));
-                    dto.setEmpLevel(rs.getInt("EMP_LEVEL"));
-
+                    RentalHistoryDTO dto = mapResultSetToDTO(rs, true);
                     list.add(dto);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace(); 
-        } finally {
-            closeResource(conn, pstmt, rs);
-        }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { closeResource(conn, pstmt, rs); }
         return list;
     }
 
-    // 1-3. 특정 기안 문서의 상세 정보 및 비품 현황 조회 (결재 상세 페이지용)
     public RentalHistoryDTO getDocumentDetail(int rentalNo) {
         RentalHistoryDTO dto = null;
         Connection conn = null;
@@ -156,46 +123,15 @@ public class RentalDAO {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, rentalNo);
                 rs = pstmt.executeQuery();
-
                 if (rs.next()) {
-                    dto = new RentalHistoryDTO();
-                    dto.setRentalNo(rs.getInt("RENTAL_NO"));
-                    dto.setEmpNo(rs.getInt("EMP_NO"));
-                    dto.setEqNo(rs.getInt("EQ_NO"));
-                    dto.setRentalDate(rs.getDate("RENTAL_DATE"));
-                    dto.setReturnDate(rs.getDate("RETURN_DATE"));
-                    dto.setStatus(rs.getString("STATUS"));
-                    dto.setApprovalStep(rs.getInt("APPROVAL_STEP"));
-
-                    dto.setSign1(rs.getString("SIGN1"));
-                    dto.setSign2(rs.getString("SIGN2"));
-                    dto.setSign3(rs.getString("SIGN3"));
-                    dto.setSign4(rs.getString("SIGN4"));
-                    dto.setSign5(rs.getString("SIGN5"));
-                    dto.setTitle(rs.getString("TITLE"));
-                    dto.setSign1Date(rs.getDate("SIGN1_DATE"));
-                    dto.setSign2Date(rs.getDate("SIGN2_DATE"));
-                    dto.setSign3Date(rs.getDate("SIGN3_DATE"));
-                    dto.setSign4Date(rs.getDate("SIGN4_DATE"));
-                    dto.setSign5Date(rs.getDate("SIGN5_DATE"));
-
-                    dto.setEmpName(rs.getString("EMP_NAME"));
-                    dto.setEmpLevel(rs.getInt("EMP_LEVEL"));
-
-                    dto.setEqName(rs.getString("EQ_NAME"));
-                    dto.setTotalCount(rs.getInt("TOTAL_COUNT"));
-                    dto.setRemainCount(rs.getInt("REMAIN_COUNT"));
+                    dto = mapResultSetToDTO(rs, true);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResource(conn, pstmt, rs);
-        }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { closeResource(conn, pstmt, rs); }
         return dto;
     }
 
-    // 1-4. 통합 3분할 결재 승인/반려 프로세스 처리
     public boolean processApproval(int rentalNo, int eqNo, int step, String empName, boolean isApprove) {
         boolean result = false;
         Connection conn = null;
@@ -204,16 +140,16 @@ public class RentalDAO {
 
         String signCol = "SIGN" + step;
         String dateCol = "SIGN" + step + "_DATE";
-        
         String status = isApprove ? "승인대기" : "반려됨";
         int nextStep = isApprove ? step + 1 : step;
 
-        if (isApprove && step == 5) {
-            status = "대여중";
-        }
+        if (isApprove && step == 5) status = "대여중";
 
         String sql = "UPDATE RENTAL_HISTORY SET " + signCol + " = ?, " + dateCol + " = SYSDATE, STATUS = ?, APPROVAL_STEP = ? WHERE RENTAL_NO = ?";
-        String updateEqSql = "UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 1 WHERE EQ_NO = ? AND REMAIN_COUNT > 0";
+        
+        // ★ 승인 시 기안에 적혀있던 수량만큼 차감
+        String updateEqSql = "UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - (SELECT REQ_COUNT FROM RENTAL_HISTORY WHERE RENTAL_NO = ?) "
+                           + "WHERE EQ_NO = ? AND REMAIN_COUNT >= (SELECT REQ_COUNT FROM RENTAL_HISTORY WHERE RENTAL_NO = ?)";
 
         try {
             conn = DBConnection.getConnection();
@@ -224,12 +160,13 @@ public class RentalDAO {
             pstmt.setString(2, status);
             pstmt.setInt(3, nextStep);
             pstmt.setInt(4, rentalNo);
-            
             int count = pstmt.executeUpdate();
 
             if (count > 0 && isApprove && step == 5) {
                 pstmtEq = conn.prepareStatement(updateEqSql);
-                pstmtEq.setInt(1, eqNo);
+                pstmtEq.setInt(1, rentalNo);
+                pstmtEq.setInt(2, eqNo);
+                pstmtEq.setInt(3, rentalNo);
                 
                 int eqCount = pstmtEq.executeUpdate();
                 if (eqCount > 0) {
@@ -242,7 +179,6 @@ public class RentalDAO {
                 conn.commit(); 
                 result = true;
             }
-
         } catch (Exception e) {
             try { if (conn != null) conn.rollback(); } catch (Exception ex) {}
             e.printStackTrace();
@@ -253,12 +189,6 @@ public class RentalDAO {
         return result;
     }
 
-
-    // =========================================================
-    // 2. [복구 완료] 기존 컨트롤러에서 사용 중이던 레거시 메서드 모음
-    // =========================================================
-
-    // 2-1. 관리자 결재함 조회 (ManagerApprovalController 사용)
     public List<RentalHistoryDTO> getPendingList(int managerLevel) {
         List<RentalHistoryDTO> list = new ArrayList<>();
         Connection conn = null;
@@ -273,29 +203,15 @@ public class RentalDAO {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, managerLevel);
                 rs = pstmt.executeQuery();
-
                 while (rs.next()) {
-                    RentalHistoryDTO dto = new RentalHistoryDTO();
-                    dto.setRentalNo(rs.getInt("RENTAL_NO"));
-                    dto.setEmpNo(rs.getInt("EMP_NO"));
-                    dto.setEqNo(rs.getInt("EQ_NO"));
-                    dto.setTitle(rs.getString("TITLE")); // 기안 제목 추가 매핑
-                    dto.setRentalDate(rs.getDate("RENTAL_DATE"));
-                    dto.setReturnDate(rs.getDate("RETURN_DATE"));
-                    dto.setStatus(rs.getString("STATUS"));
-                    dto.setApprovalStep(rs.getInt("APPROVAL_STEP"));
-                    list.add(dto);
+                    list.add(mapResultSetToDTO(rs, false));
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResource(conn, pstmt, rs);
-        }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { closeResource(conn, pstmt, rs); }
         return list;
     }
 
-    // 2-2. 개인 대여 내역 조회 (MyRentalListController 사용)
     public List<RentalHistoryDTO> getMyRentalList(int empNo) {
         List<RentalHistoryDTO> list = new ArrayList<>();
         Connection conn = null;
@@ -310,54 +226,57 @@ public class RentalDAO {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setInt(1, empNo);
                 rs = pstmt.executeQuery();
-
                 while (rs.next()) {
-                    RentalHistoryDTO dto = new RentalHistoryDTO();
-                    dto.setRentalNo(rs.getInt("RENTAL_NO"));
-                    dto.setEqNo(rs.getInt("EQ_NO"));
-                    dto.setEqName(rs.getString("EQ_NAME")); 
-                    dto.setTitle(rs.getString("TITLE")); // 기안 제목 추가 매핑
-                    dto.setRentalDate(rs.getDate("RENTAL_DATE"));
-                    dto.setReturnDate(rs.getDate("RETURN_DATE"));
-                    dto.setStatus(rs.getString("STATUS"));
-                    list.add(dto);
+                    list.add(mapResultSetToDTO(rs, false));
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResource(conn, pstmt, rs);
-        }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { closeResource(conn, pstmt, rs); }
         return list;
     }
 
-    // 2-3. 결재 상태 강제 업데이트 (ReturnProcessController 반납 처리 사용)
     public boolean updateStatus(int rentalNo, String status) {
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
+        PreparedStatement pstmtRestore = null;
 
         String sql = "UPDATE RENTAL_HISTORY SET STATUS = ? WHERE RENTAL_NO = ?";
 
         try {
             conn = DBConnection.getConnection();
-            if (conn != null) {
-                pstmt = conn.prepareStatement(sql);
-                pstmt.setString(1, status);
-                pstmt.setInt(2, rentalNo);
+            conn.setAutoCommit(false);
 
-                int count = pstmt.executeUpdate();
-                if (count > 0) result = true;
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, status);
+            pstmt.setInt(2, rentalNo);
+
+            int count = pstmt.executeUpdate();
+            
+            // ★ 반납 완료 시 수량 복구 (재고 더하기)
+            if (count > 0 && "반납완료".equals(status)) {
+                String restoreSql = "UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT + (SELECT REQ_COUNT FROM RENTAL_HISTORY WHERE RENTAL_NO = ?) "
+                                  + "WHERE EQ_NO = (SELECT EQ_NO FROM RENTAL_HISTORY WHERE RENTAL_NO = ?)";
+                pstmtRestore = conn.prepareStatement(restoreSql);
+                pstmtRestore.setInt(1, rentalNo);
+                pstmtRestore.setInt(2, rentalNo);
+                pstmtRestore.executeUpdate();
+            }
+
+            if (count > 0) {
+                conn.commit();
+                result = true;
             }
         } catch (Exception e) {
+            try { if (conn != null) conn.rollback(); } catch (Exception ex) {}
             e.printStackTrace();
         } finally {
+            if (pstmtRestore != null) try { pstmtRestore.close(); } catch(Exception e) {}
             closeResource(conn, pstmt, null);
         }
         return result;
     }
 
-    // 2-4. 다단계 결재 처리 (ApprovalProcessController 사용)
     public boolean processStepApproval(int rentalNo, int currentStep, String managerName, String action) {
         boolean result = false;
         Connection conn = null;
@@ -369,7 +288,6 @@ public class RentalDAO {
 
             if ("approve".equals(action)) {
                 if (currentStep < 5) {
-                    // 승인 날짜 기록 포함
                     sql = "UPDATE RENTAL_HISTORY SET SIGN" + currentStep + " = ?, SIGN" + currentStep + "_DATE = SYSDATE, APPROVAL_STEP = ? WHERE RENTAL_NO = ?";
                     pstmt = conn.prepareStatement(sql);
                     pstmt.setString(1, managerName);
@@ -382,7 +300,6 @@ public class RentalDAO {
                     pstmt.setInt(2, rentalNo);
                 }
             } else {
-                // 반려 시 서명 및 날짜 초기화
                 sql = "UPDATE RENTAL_HISTORY SET SIGN1=NULL, SIGN1_DATE=NULL, SIGN2=NULL, SIGN2_DATE=NULL, SIGN3=NULL, SIGN3_DATE=NULL, SIGN4=NULL, SIGN4_DATE=NULL, SIGN5=NULL, SIGN5_DATE=NULL, "
                         + "APPROVAL_STEP = 1, STATUS = '반려됨' WHERE RENTAL_NO = ?";
                 pstmt = conn.prepareStatement(sql);
@@ -392,22 +309,53 @@ public class RentalDAO {
             int count = pstmt.executeUpdate();
             if (count > 0) result = true;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResource(conn, pstmt, null);
-        }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { closeResource(conn, pstmt, null); }
         return result;
     }
 
-    // 공통 자원 해제 메서드
+    // 공통 매핑 유틸리티 (중복 코드 제거)
+    private RentalHistoryDTO mapResultSetToDTO(ResultSet rs, boolean includeJoinFields) throws Exception {
+        RentalHistoryDTO dto = new RentalHistoryDTO();
+        dto.setRentalNo(rs.getInt("RENTAL_NO"));
+        dto.setEmpNo(rs.getInt("EMP_NO"));
+        dto.setEqNo(rs.getInt("EQ_NO"));
+        dto.setRentalDate(rs.getDate("RENTAL_DATE"));
+        dto.setReturnDate(rs.getDate("RETURN_DATE"));
+        dto.setStatus(rs.getString("STATUS"));
+        dto.setApprovalStep(rs.getInt("APPROVAL_STEP"));
+        dto.setSign1(rs.getString("SIGN1"));
+        dto.setSign2(rs.getString("SIGN2"));
+        dto.setSign3(rs.getString("SIGN3"));
+        dto.setSign4(rs.getString("SIGN4"));
+        dto.setSign5(rs.getString("SIGN5"));
+        dto.setTitle(rs.getString("TITLE"));
+        dto.setSign1Date(rs.getDate("SIGN1_DATE"));
+        dto.setSign2Date(rs.getDate("SIGN2_DATE"));
+        dto.setSign3Date(rs.getDate("SIGN3_DATE"));
+        dto.setSign4Date(rs.getDate("SIGN4_DATE"));
+        dto.setSign5Date(rs.getDate("SIGN5_DATE"));
+        dto.setReqCount(rs.getInt("REQ_COUNT")); // ★ 수량 매핑
+
+        // JOIN 필드가 있는 경우 처리
+        if (includeJoinFields) {
+            dto.setEmpName(rs.getString("EMP_NAME"));
+            dto.setEmpLevel(rs.getInt("EMP_LEVEL"));
+            dto.setEqName(rs.getString("EQ_NAME"));
+            dto.setTotalCount(rs.getInt("TOTAL_COUNT"));
+            dto.setRemainCount(rs.getInt("REMAIN_COUNT"));
+        } else {
+            // MyRentalList에서 조인으로 EQ_NAME만 가져올 경우 대비
+            try { dto.setEqName(rs.getString("EQ_NAME")); } catch (Exception e) {}
+        }
+        return dto;
+    }
+
     private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {
         try {
             if (rs != null) rs.close();
             if (pstmt != null) pstmt.close();
             if (conn != null) conn.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }

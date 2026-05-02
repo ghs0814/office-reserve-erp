@@ -73,6 +73,11 @@
                         <%= doc.getRemainCount() %> 개
                     </span>
                 </div>
+                <!-- ★ 추가됨: 결재 요청 수량 표시 (눈에 확 띄게 주황색 처리) -->
+                <div class="info-row" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <span class="info-label">대여 신청 수량:</span> 
+                    <strong style="color: #FF9800; font-size: 18px;"><%= doc.getReqCount() %> 개</strong>
+                </div>
             </div>
 
             <div class="panel">

@@ -27,6 +27,13 @@ public class RentProcessController extends HttpServlet {
         String rentalDateStr = request.getParameter("rentalDate");
         String returnDateStr = request.getParameter("returnDate");
         String title = request.getParameter("title"); 
+        
+        // ★ 추가됨: 수량 파라미터 받기 (기본값 1)
+        int reqCount = 1;
+        String reqCountStr = request.getParameter("reqCount");
+        if(reqCountStr != null && !reqCountStr.isEmpty()) {
+            reqCount = Integer.parseInt(reqCountStr);
+        }
 
         PrintWriter out = response.getWriter();
         out.println("<script>");
@@ -46,14 +53,12 @@ public class RentProcessController extends HttpServlet {
             dto.setRentalDate(rentalDate);
             dto.setReturnDate(returnDate);
             dto.setTitle(title); 
+            dto.setReqCount(reqCount); // ★ DTO에 수량 세팅
             
             int myLevel = loginEmp.getEmpLevel(); 
-            
-            // ★ 새로 추가된 부분: 기안 시점의 오늘 날짜 생성
             Date today = new Date(System.currentTimeMillis());
 
             if (myLevel >= 5) {
-                // 최고 관리자(5단계)가 기안할 경우 즉시 '대여중' 처리 및 모든 날짜 채우기
                 dto.setStatus("대여중");
                 dto.setApprovalStep(5);
                 dto.setSign1(loginEmp.getEmpName()); dto.setSign1Date(today);
@@ -65,7 +70,6 @@ public class RentProcessController extends HttpServlet {
                 dto.setStatus("승인대기");
                 dto.setApprovalStep(myLevel + 1);
                 
-                // 본인 직급까지 이름과 '오늘 날짜'를 동시에 세팅합니다.
                 if (myLevel >= 1) { dto.setSign1(loginEmp.getEmpName()); dto.setSign1Date(today); }
                 if (myLevel >= 2) { dto.setSign2(loginEmp.getEmpName()); dto.setSign2Date(today); }
                 if (myLevel >= 3) { dto.setSign3(loginEmp.getEmpName()); dto.setSign3Date(today); }
