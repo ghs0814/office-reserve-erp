@@ -33,33 +33,58 @@
     .time-btn:hover:not(:disabled) { border-color: #ff5722; color: #ff5722; }
     .time-btn.active { background-color: #ff5722; color: white; border-color: #ff5722; }
     .time-btn:disabled { background-color: #f5f5f5; color: #ccc; cursor: not-allowed; border-color: #eee; }
+    
+    /* ★ 추가됨: 선택된 상태에서 비활성화된 버튼은 연한 주황색으로 유지 */
+    .time-btn.active:disabled { background-color: #ff8a65; color: white; border-color: #ff8a65; opacity: 0.9; }
 
-    /* 타이머 UI 디자인 */
     .timer-box { display: none; background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 14px; }
     .timer-text { color: #d9534f; font-size: 18px; margin-left: 5px; }
 
     .btn-group { display: flex; gap: 10px; margin-top: 30px; }
-    .btn-submit { flex: 1; padding: 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
-    .btn-cancel { flex: 1; padding: 12px; background-color: #ccc; color: #333; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; font-weight: bold; box-sizing: border-box; }
-    .btn-submit:hover { background-color: #45a049; }
+    .btn-action { flex: 1; padding: 12px; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; box-sizing: border-box; }
+    .btn-hold { background-color: #2196F3; width: 100%; margin-top: 10px; }
+    .btn-hold:hover { background-color: #1976d2; }
+    .btn-submit { background-color: #4CAF50; }
+    .btn-submit:hover:not(:disabled) { background-color: #45a049; }
+    .btn-submit:disabled { background-color: #a5d6a7; cursor: not-allowed; }
+    .btn-cancel { background-color: #ccc; color: #333; }
     .btn-cancel:hover { background-color: #bbb; }
 </style>
 
 <script>
-    let timerInterval = null; // 타이머 변수
+    let timerInterval = null; 
+    let selectedTimes = []; 
 
-    // 1. 타이머 작동 함수 (5분)
-    function startTimer() {
-        let timeLeft = 300; // 5분 = 300초
-        //let timeLeft = 10; // 테스트용: 10초
+    function isContinuous(times) {
+        if (times.length <= 1) return true;
+        for (let i = 0; i < times.length - 1; i++) {
+            let t1 = parseInt(times[i].split(':')[0]);
+            let t2 = parseInt(times[i+1].split(':')[0]);
+            if (t2 - t1 !== 1) return false;
+        }
+        return true;
+    }
+
+    // ★ 수정됨: 시작 시간과 종료 시간을 받아서 텍스트로 띄워줍니다.
+    function startTimer(startStr, endStr) {
+        let timeLeft = 300; // 5분
         const timerBox = document.getElementById("timerBox");
         const timeDisplay = document.getElementById("timeDisplay");
         const submitBtn = document.getElementById("submitBtn");
+        const holdBtn = document.getElementById("holdBtn");
+        const holdTimeText = document.getElementById("holdTimeText");
 
-        timerBox.style.display = "block"; // 타이머 UI 보이기
-        submitBtn.disabled = false; // 예약하기 버튼 활성화
+        // 안내 문구에 선택한 시간 범위 표시
+        holdTimeText.innerText = "[" + startStr + " ~ " + endStr + "]";
 
-        if(timerInterval) clearInterval(timerInterval); // 기존 타이머 리셋
+        timerBox.style.display = "block"; 
+        submitBtn.disabled = false; 
+        holdBtn.style.display = "none"; 
+
+        // 시간 버튼 모두 비활성화 (선점 후 수정 불가) -> CSS 적용으로 선택된 버튼은 주황색 유지
+        document.querySelectorAll('.time-btn').forEach(btn => btn.disabled = true);
+
+        if(timerInterval) clearInterval(timerInterval); 
 
         timerInterval = setInterval(function() {
             timeLeft--;
@@ -70,70 +95,90 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 alert("선점 시간이 만료되었습니다. 다시 시간을 선택해주세요.");
-                location.reload(); // 페이지 새로고침
+                location.reload(); 
             }
         }, 1000);
     }
 
-    // 2. 시간 선택 시 AJAX 선점 로직
     document.addEventListener("DOMContentLoaded", function() {
         const timeButtons = document.querySelectorAll('.time-btn');
         const resDateInput = document.getElementById("resDate");
+        const holdBtn = document.getElementById("holdBtn");
         
         timeButtons.forEach(btn => {
             btn.addEventListener('click', function() {
                 if(this.disabled) return;
                 
-                const selectedDate = resDateInput.value;
-                if(!selectedDate) {
-                    alert("예약 날짜를 먼저 선택해주세요.");
-                    return;
-                }
+                const timeStr = this.getAttribute('data-time');
 
-                const selectedTime = this.getAttribute('data-time');
-                let hour = parseInt(selectedTime.split(':')[0]);
-                let endTimeStr = (hour + 1 < 10 ? '0' + (hour + 1) : (hour + 1)) + ':00';
-                
-                const roomId = document.getElementById("roomId").value;
-                const empNo = document.getElementById("empNo").value;
-
-                // 폼 데이터 생성
-                const formData = new URLSearchParams();
-                formData.append("roomId", roomId);
-                formData.append("empNo", empNo);
-                formData.append("resDate", selectedDate);
-                formData.append("startTime", selectedTime);
-                formData.append("endTime", endTimeStr);
-
-                // AJAX 비동기 요청 (holdReserve.do)
-                fetch('holdReserve.do', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.result === 'success') {
-                        // 선점 성공: 버튼 UI 변경
-                        timeButtons.forEach(b => b.classList.remove('active'));
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    selectedTimes = selectedTimes.filter(t => t !== timeStr);
+                    
+                    if (!isContinuous(selectedTimes)) {
+                        alert("연속된 시간만 선택 가능합니다. 중간 시간을 뺄 수 없습니다.");
                         this.classList.add('active');
-                        
-                        // 발급받은 임시 예약번호를 hidden 영역에 저장
-                        document.getElementById('resNo').value = data.resNo;
-                        
-                        // 5분 타이머 시작
-                        startTimer();
-                    } else {
-                        alert("다른 분이 방금 선점한 시간입니다. 다른 시간을 선택해주세요.");
-                        // 비활성화 처리
-                        this.disabled = true;
+                        selectedTimes.push(timeStr);
+                        selectedTimes.sort();
                     }
-                })
-                .catch(error => console.error('Error:', error));
+                } else {
+                    selectedTimes.push(timeStr);
+                    selectedTimes.sort();
+                    
+                    if (!isContinuous(selectedTimes)) {
+                        alert("연속된 시간만 선택 가능합니다. 빈 시간을 먼저 채워주세요.");
+                        selectedTimes = selectedTimes.filter(t => t !== timeStr);
+                    } else {
+                        this.classList.add('active');
+                    }
+                }
             });
         });
 
-        // 3. 날짜 변경 시 예약된 시간 불러오기 (기존 로직 유지)
+        holdBtn.addEventListener('click', function() {
+            const selectedDate = resDateInput.value;
+            if(!selectedDate) {
+                alert("예약 날짜를 먼저 선택해주세요.");
+                return;
+            }
+            if(selectedTimes.length === 0) {
+                alert("예약할 시간을 하나 이상 선택해주세요.");
+                return;
+            }
+
+            const startTime = selectedTimes[0];
+            let lastHour = parseInt(selectedTimes[selectedTimes.length - 1].split(':')[0]);
+            let endTimeStr = (lastHour + 1 < 10 ? '0' + (lastHour + 1) : (lastHour + 1)) + ':00';
+            
+            const roomId = document.getElementById("roomId").value;
+            const empNo = document.getElementById("empNo").value;
+
+            const formData = new URLSearchParams();
+            formData.append("roomId", roomId);
+            formData.append("empNo", empNo);
+            formData.append("resDate", selectedDate);
+            formData.append("startTime", startTime);
+            formData.append("endTime", endTimeStr); 
+
+            fetch('holdReserve.do', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === 'success') {
+                    document.getElementById('resNo').value = data.resNo;
+                    // ★ 수정됨: 시작 시간과 종료 시간을 함수로 넘겨줍니다.
+                    startTimer(startTime, endTimeStr);
+                } else {
+                    alert("선택하신 시간대에 이미 선점된 예약이 겹쳐있습니다. 새로고침 후 다시 시도해주세요.");
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
         resDateInput.addEventListener('change', function() {
             const selectedDate = this.value;
             if (!selectedDate) return;
@@ -143,15 +188,17 @@
             fetch('checkReservedTime.do?roomId=' + roomId + '&resDate=' + selectedDate)
                 .then(response => response.json())
                 .then(reservedTimes => {
+                    selectedTimes = []; 
+                    
                     timeButtons.forEach(btn => {
                         btn.disabled = false;
                         btn.classList.remove('active');
                     });
                     
-                    // 날짜를 바꾸면 타이머와 임시번호 리셋
                     clearInterval(timerInterval);
                     document.getElementById("timerBox").style.display = "none";
                     document.getElementById("submitBtn").disabled = true;
+                    document.getElementById("holdBtn").style.display = "block";
                     document.getElementById("resNo").value = "";
 
                     timeButtons.forEach(btn => {
@@ -166,7 +213,7 @@
 
     function validateForm() {
         if (!document.getElementById("resNo").value) {
-            alert("시간을 선택하여 예약을 선점해주세요.");
+            alert("먼저 [시간 선점하기] 버튼을 눌러 예약을 선점해주세요.");
             return false;
         }
         if (!document.getElementById("purpose").value.trim()) {
@@ -191,13 +238,13 @@
         <p style="margin: 5px 0 0 0; font-size: 13px; color: #666;"><%= roomInfo.getDescription() %></p>
     </div>
     
-    <!-- ★ 새로 추가된 타이머 영역 -->
+    <!-- ★ 수정됨: 타이머 영역에 선택한 시간 범위를 띄워줄 텍스트 영역(holdTimeText) 추가 -->
     <div class="timer-box" id="timerBox">
-        임시 선점 완료! 남은 시간 내에 확정해주세요 <span class="timer-text" id="timeDisplay">05:00</span>
+        <span id="holdTimeText" style="color: #d32f2f; font-size: 16px;"></span><br>
+        남은 시간 내에 예약을 확정해주세요 <span class="timer-text" id="timeDisplay">05:00</span>
     </div>
 
     <form action="reserveProcess.do" method="post" onsubmit="return validateForm();">
-        <!-- 이제 AJAX로 발급받은 resNo만 넘기면 됩니다 -->
         <input type="hidden" id="resNo" name="resNo" value="">
         <input type="hidden" id="roomId" name="roomId" value="<%= roomInfo.getRoomId() %>">
         <input type="hidden" id="empNo" name="empNo" value="<%= loginEmp.getEmpNo() %>">
@@ -208,7 +255,7 @@
         </div>
         
         <div class="form-group">
-            <label>시간 선택</label>
+            <label>시간 선택 (연속 선택 가능)</label>
             <div class="time-grid" id="timeGrid">
                 <button type="button" class="time-btn" data-time="09:00">09:00</button>
                 <button type="button" class="time-btn" data-time="10:00">10:00</button>
@@ -219,8 +266,9 @@
                 <button type="button" class="time-btn" data-time="15:00">15:00</button>
                 <button type="button" class="time-btn" data-time="16:00">16:00</button>
                 <button type="button" class="time-btn" data-time="17:00">17:00</button>
-                <!-- <button type="button" class="time-btn" data-time="18:00">18:00</button> -->
+                <button type="button" class="time-btn" data-time="18:00">18:00</button>
             </div>
+            <button type="button" class="btn-action btn-hold" id="holdBtn">선택한 시간 확정하기</button>
         </div>
         
         <div class="form-group">
@@ -229,8 +277,8 @@
         </div>
         
         <div class="btn-group">
-            <a href="main.jsp" class="btn-cancel">취소</a>
-            <button type="submit" class="btn-submit" id="submitBtn" disabled>예약 확정하기</button>
+            <a href="main.jsp" class="btn-action btn-cancel">취소</a>
+            <button type="submit" class="btn-action btn-submit" id="submitBtn" disabled>예약 확정하기</button>
         </div>
     </form>
 </div>

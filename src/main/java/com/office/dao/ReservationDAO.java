@@ -11,11 +11,10 @@ import com.office.util.DBConnection;
 
 public class ReservationDAO {
 
-    // ★ [신규] 유령 예약 청소 메서드 (조회하기 직전마다 이 메서드를 호출해서 만료된 임시 데이터를 지웁니다)
+    // 1. [유지] 유령 예약 청소 메서드
     public void cleanUpGhostReservations() {
         Connection conn = null;
         PreparedStatement pstmt = null;
-        // 상태가 '임시선점'이면서 현재 시간(SYSDATE)이 만료 시간(EXPIRE_TIME)을 넘긴 쓰레기 데이터를 삭제합니다.
         String sql = "DELETE FROM RESERVATION WHERE STATUS = '임시선점' AND EXPIRE_TIME < SYSDATE";
         try {
             conn = DBConnection.getConnection();
@@ -27,14 +26,13 @@ public class ReservationDAO {
         finally { closeResource(conn, pstmt, null); }
     }
 
-    // ★ [신규] 시간 버튼 클릭 시 5분 타이머와 함께 '임시선점' 데이터 삽입 (AJAX 용도)
+    // 2. [수정됨] 시간 버튼 클릭 시 5분 타이머와 함께 '임시선점' 데이터 삽입 (AJAX 용도)
     public synchronized int holdReservation(ReservationDTO dto) {
-        // 넣기 전에 유령 데이터 청소
         cleanUpGhostReservations();
 
-        // 1. 혹시 누군가 그 찰나에 먼저 선점했는지 확인
-        if(checkDuplicate(dto.getRoomId(), (java.sql.Date)dto.getResDate(), dto.getStartTime())) {
-            return -1; // -1: 이미 선점당함
+        // ★ 변경점: 이제 시작시간과 종료시간 전체 범위가 겹치는지 검사합니다.
+        if(checkDuplicate(dto.getRoomId(), (java.sql.Date)dto.getResDate(), dto.getStartTime(), dto.getEndTime())) {
+            return -1; // -1: 범위 내에 이미 예약된 시간이 있음
         }
 
         int newResNo = 0;
@@ -42,16 +40,9 @@ public class ReservationDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        // 상태는 '임시선점', EXPIRE_TIME은 현재시간(SYSDATE) + 5분(5/24/60)
         String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, STATUS, EXPIRE_TIME) "
                    + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, '임시선점', SYSDATE + (5/24/60))";
         
-     // 기존 쿼리: SYSDATE + (5 / (24 * 60))
-//        String sql = "INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, STATUS, EXPIRE_TIME) "
-//                   + "VALUES (SEQ_RESERVATION.NEXTVAL, ?, ?, ?, ?, ?, '임시선점', SYSDATE + (10 / (24 * 60 * 60)))"; 
-                   // 테스트용: 10초 뒤 만료
-        
-        // 방금 넣은 예약번호(RES_NO)를 리턴받기 위한 쿼리
         String[] generatedColumns = {"RES_NO"};
 
         try {
@@ -68,7 +59,7 @@ public class ReservationDAO {
                 if (count > 0) {
                     rs = pstmt.getGeneratedKeys();
                     if(rs.next()) {
-                        newResNo = rs.getInt(1); // 방금 생성된 임시 예약번호
+                        newResNo = rs.getInt(1); 
                     }
                 }
             }
@@ -78,16 +69,14 @@ public class ReservationDAO {
         return newResNo;
     }
 
-    // ★ [수정] 확인 버튼을 눌렀을 때 '임시선점' -> '예약완료'로 업데이트
+    // 3. [유지] 확인 버튼을 눌렀을 때 '임시선점' -> '예약완료'로 업데이트
     public boolean confirmReservation(int resNo, String purpose) {
-        // 확정하기 전에 유령 데이터 청소
         cleanUpGhostReservations();
 
         boolean result = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         
-        // 5분이 지나기 전에 확정 요청이 들어온 경우 상태를 예약완료로 변경하고 만료시간은 NULL 처리
         String sql = "UPDATE RESERVATION SET STATUS = '예약완료', PURPOSE = ?, EXPIRE_TIME = NULL "
                    + "WHERE RES_NO = ? AND STATUS = '임시선점'";
 
@@ -99,22 +88,25 @@ public class ReservationDAO {
                 pstmt.setInt(2, resNo);
                 
                 int count = pstmt.executeUpdate();
-                if (count > 0) result = true; // 성공적으로 확정됨
+                if (count > 0) result = true; 
             }
         } catch (Exception e) { e.printStackTrace(); } 
         finally { closeResource(conn, pstmt, null); }
         return result;
     }
 
-    // 기존 2. 예약 중복 확인 (예약완료 + 임시선점 모두 막아야 함)
-    public boolean checkDuplicate(String roomId, java.sql.Date date, String startTime) {
+    // 4. [완전 교체] 범위 중복(Overlap) 검사 로직
+    // 내가 신청한 (reqStart ~ reqEnd) 범위 안에 기존 예약이 하나라도 겹치면 true 반환
+    public boolean checkDuplicate(String roomId, java.sql.Date date, String reqStart, String reqEnd) {
         boolean isDuplicate = false;
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
-        // 예약완료 상태이거나, 다른 사람이 아직 5분 임시선점 중인 경우 모두 차단
-        String sql = "SELECT COUNT(*) FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND START_TIME = ? AND STATUS IN ('예약완료', '임시선점')";
+        // ★ 핵심: 두 시간 구간이 겹치려면 (기존 시작 < 내 종료) AND (기존 종료 > 내 시작) 이어야 합니다.
+        String sql = "SELECT COUNT(*) FROM RESERVATION "
+                   + "WHERE ROOM_ID = ? AND RES_DATE = ? AND STATUS IN ('예약완료', '임시선점') "
+                   + "AND START_TIME < ? AND END_TIME > ?";
 
         try {
             conn = DBConnection.getConnection();
@@ -122,11 +114,12 @@ public class ReservationDAO {
                 pstmt = conn.prepareStatement(sql);
                 pstmt.setString(1, roomId);
                 pstmt.setDate(2, date);
-                pstmt.setString(3, startTime);
+                pstmt.setString(3, reqEnd);   // 기존 예약의 START_TIME < 나의 END_TIME
+                pstmt.setString(4, reqStart); // 기존 예약의 END_TIME > 나의 START_TIME
 
                 rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    if (rs.getInt(1) > 0) isDuplicate = true;
+                    if (rs.getInt(1) > 0) isDuplicate = true; // 1개라도 겹치면 중복!
                 }
             }
         } catch (Exception e) { e.printStackTrace(); } 
@@ -134,16 +127,15 @@ public class ReservationDAO {
         return isDuplicate;
     }
 
-    // 기존 3. 내 예약 내역 조회
+    // 5. [유지] 내 예약 내역 조회
     public List<ReservationDTO> getMyReservations(int empNo) {
-        cleanUpGhostReservations(); // 조회 전 찌꺼기 청소
+        cleanUpGhostReservations(); 
         
         List<ReservationDTO> list = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
-        // 내 목록에는 확정된 예약과 취소된 예약만 보여줍니다. (임시선점 상태는 숨김)
         String sql = "SELECT * FROM RESERVATION WHERE EMP_NO = ? AND STATUS != '임시선점' ORDER BY RES_DATE DESC, START_TIME DESC";
 
         try {
@@ -171,7 +163,7 @@ public class ReservationDAO {
         return list;
     }
 
-    // 기존 4. 예약 취소 
+    // 6. [유지] 예약 취소 
     public boolean cancelReservation(int resNo) {
         boolean result = false;
         Connection conn = null;
@@ -190,17 +182,17 @@ public class ReservationDAO {
         return result;
     }
 
-    // 기존 5. 실시간 예약 현황 확인 (AJAX 연동용)
+    // 7. [완전 교체] 실시간 예약 현황 확인 (시간 쪼개기 로직 추가)
+    // DB에 "09:00~12:00" 1줄이 있어도, 화면에는 ["09:00", "10:00", "11:00"] 로 쪼개서 줍니다.
     public List<String> getReservedTimes(String roomId, String resDate) {
-        cleanUpGhostReservations(); // 누군가 조회할 때마다 찌꺼기 청소 실행!
+        cleanUpGhostReservations(); 
         
         List<String> reservedTimes = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        // 예약완료 또는 다른 사람이 임시선점 중인 시간을 모두 가져와서 회색 버튼으로 처리합니다.
-        String sql = "SELECT START_TIME FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND STATUS IN ('예약완료', '임시선점')";
+        String sql = "SELECT START_TIME, END_TIME FROM RESERVATION WHERE ROOM_ID = ? AND RES_DATE = ? AND STATUS IN ('예약완료', '임시선점')";
 
         try {
             conn = DBConnection.getConnection();
@@ -210,7 +202,19 @@ public class ReservationDAO {
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                reservedTimes.add(rs.getString("START_TIME"));
+                String start = rs.getString("START_TIME");
+                String end = rs.getString("END_TIME");
+                
+                int startHour = Integer.parseInt(start.split(":")[0]);
+                int endHour = Integer.parseInt(end.split(":")[0]);
+                
+                // 09시부터 12시라면 -> 9, 10, 11 을 리스트에 추가합니다.
+                for (int i = startHour; i < endHour; i++) {
+                    String timeStr = (i < 10 ? "0" + i : i) + ":00";
+                    if (!reservedTimes.contains(timeStr)) {
+                        reservedTimes.add(timeStr);
+                    }
+                }
             }
         } catch (Exception e) { e.printStackTrace(); } 
         finally { closeResource(conn, pstmt, rs); }

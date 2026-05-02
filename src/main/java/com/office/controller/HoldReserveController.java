@@ -12,9 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 import com.office.dao.ReservationDAO;
 import com.office.dto.ReservationDTO;
 
-/**
- * 시간 버튼 클릭 시 AJAX 요청을 받아 5분 '임시선점'을 처리하는 컨트롤러입니다.
- */
 @WebServlet("/holdReserve.do")
 public class HoldReserveController extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -37,10 +34,9 @@ public class HoldReserveController extends HttpServlet {
         dto.setEndTime(endTime);
 
         ReservationDAO dao = new ReservationDAO();
-        // DAO를 호출하여 임시선점을 걸고 새로운 예약 번호를 받아옵니다. (-1이면 이미 선점당한 것)
+        // DAO에서 겹침 방지(Overlap) 로직을 통과하면 새 예약 번호를 줍니다.
         int newResNo = dao.holdReservation(dto);
 
-        // JSON 형태로 브라우저에 응답을 보냅니다.
         response.setContentType("application/json; charset=UTF-8");
         PrintWriter out = response.getWriter();
         
