@@ -1,8 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.office.dto.EmployeeDTO"%>
 <%
-// 1. 보안 체크: 세션에서 로그인 정보를 가져오고, 없으면 로그인 페이지로 튕겨냄
 EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
 if (loginEmp == null) {
 	response.sendRedirect("index.jsp");
@@ -13,73 +11,95 @@ if (loginEmp == null) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>오피스 예약 시스템 - 메인 대시보드</title>
+<title>사내 시스템 - 대시보드</title>
 <style>
-/* 메인 화면 스타일링 및 레이아웃 */
 body {
-	font-family: 'Malgun Gothic', sans-serif;
-	background-color: #f0f2f5;
+	font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+	background-color: #f4f6f9;
 	margin: 0;
-	padding: 20px;
+	padding: 30px;
 }
-
-/* 상단 헤더 및 메뉴 바 스타일 */
 .header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	background-color: white;
+	background-color: #212529; /* 다크 테마 헤더 */
+	color: #ffffff;
 	padding: 15px 30px;
 	border-radius: 8px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	margin-bottom: 20px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	margin-bottom: 30px;
 }
-
-.logout-btn {
-	padding: 8px 15px;
-	background-color: #ff4c4c;
-	color: white;
+.header h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.nav-btn {
+	padding: 8px 16px;
+	background-color: #343a40;
+	color: #ffffff;
 	text-decoration: none;
 	border-radius: 4px;
-	font-weight: bold;
+	font-weight: 600;
+    font-size: 13px;
+    border: 1px solid #495057;
+    transition: all 0.2s;
 }
+.nav-btn:hover { background-color: #495057; border-color: #6c757d; }
+.nav-btn.admin { border-color: #dc3545; color: #ffc107; }
+.nav-btn.admin:hover { background-color: #dc3545; color: #ffffff; }
+.nav-btn.logout { background-color: transparent; border: none; color: #adb5bd; text-decoration: underline; }
+.nav-btn.logout:hover { color: #ffffff; }
 
-/* 도면 이미지 컨테이너 및 배경 설정 */
+.map-wrapper {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.map-title {
+    width: 1000px;
+    text-align: left;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #343a40;
+    font-size: 16px;
+}
 .map-container {
-	position: relative; /* 자식 요소인 room-btn들의 absolute 위치 기준점 */
+	position: relative; 
 	width: 1000px;
 	height: 550px;
-	background-color: white;
-	margin: 0 auto;
-	border: 2px solid #ccc;
-	background-image: url('images/floor4_map.png'); /* 4층 도면 이미지 */
+	background-color: #ffffff;
+	border: 1px solid #ced4da;
+	background-image: url('images/floor4_map.png'); 
 	background-size: 100% 100%;
 	background-repeat: no-repeat;
+    border-radius: 4px;
 }
-
-/* 도면 위 투명 버튼 스타일 (회의실 클릭용) */
 .room-btn {
 	position: absolute;
-	background-color: transparent;
-	border: none;
+	background-color: rgba(52, 58, 64, 0.05);
+	border: 1px dashed #adb5bd;
 	cursor: pointer;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	font-weight: bold;
-	color: transparent;
-	transition: 0.2s;
+	transition: all 0.2s;
 	box-sizing: border-box;
+    border-radius: 2px;
 }
-
-/* 버튼 마우스 호버 시 강조 효과 */
 .room-btn:hover {
-	background-color: rgba(76, 175, 80, 0.4);
-	border: 2px solid #4CAF50;
-	color: white;
+	background-color: rgba(33, 150, 243, 0.2);
+	border: 2px solid #2196F3;
 }
 
-/* 도면 좌표에 따른 회의실 버튼별 위치 값 (백분율) */
 #room404 { top: 4%; left: 4%; width: 24%; height: 34%; }
 #room403 { top: 4%; left: 29%; width: 24%; height: 34%; }
 #room402 { top: 4%; left: 53%; width: 19%; height: 34%; }
@@ -92,47 +112,39 @@ body {
 <body>
 
 	<div class="header">
-		<h2>오피스 예약 시스템</h2>
-		<div>
-			<%-- 관리자(manager='Y')인 경우 이름 앞에 붉은색 [관리자] 텍스트 출력 --%>
+		<h2>Groupware</h2>
+		<div class="nav-buttons">
 			<% if ("Y".equals(loginEmp.getManager())) { %>
-				<span style="color: #d9534f; font-weight: bold;">[관리자]</span>
+				<span style="color: #ffc107; font-weight: bold; font-size: 13px; margin-right: 5px;">[관리자]</span>
 			<% } %>
-			<span style="margin-right: 15px;"><b><%=loginEmp.getEmpName()%></b>님 환영합니다.</span>
+			<span style="margin-right: 20px; font-size: 14px; color: #e9ecef;"><b><%=loginEmp.getEmpName()%></b>님</span>
 
-			<!-- 1. 최고 관리자(manager='Y') 전용 사원 관리 및 재고 관리 버튼 -->
 			<% if ("Y".equals(loginEmp.getManager())) { %>
-				<a href="adminEqList.do" class="logout-btn" style="background-color: #8D6E63; margin-right: 10px;">재고 관리</a>
-				<a href="admin.do" class="logout-btn" style="background-color: #333; margin-right: 10px;">사원 관리</a>
+				<a href="adminEqList.do" class="nav-btn admin">재고 관리</a>
+				<a href="admin.do" class="nav-btn admin">사원 관리</a>
+                <span style="color: #495057;">|</span>
 			<% } %>
 
-			<!-- 2. 모든 사용자(전 직급)에게 공통으로 보이는 메뉴 -->
-			<a href="equipmentList.do" class="logout-btn" style="background-color: #FF9800; margin-right: 10px;">비품 대여 신청</a>
-			<a href="documentList.do" class="logout-btn" style="background-color: #4CAF50; margin-right: 10px;">기안 문서함</a>	
-			<a href="myPage.do" class="logout-btn" style="background-color: #00BCD4; margin-right: 10px;">마이페이지</a>
-			
-			<a href="logout.do" class="logout-btn">로그아웃</a>
+			<a href="equipmentList.do" class="nav-btn">비품 대여 신청</a>
+			<a href="documentList.do" class="nav-btn">기안 문서함</a>	
+			<a href="myPage.do" class="nav-btn">마이페이지</a>
+			<a href="logout.do" class="nav-btn logout">로그아웃</a>
 		</div>
 	</div>
 
-	<!-- 5. 회의실 안내도 클릭 영역: 클릭 시 해당 roomId를 파라미터로 예약 화면(reserve.do)으로 이동 -->
-	<div class="map-container">
-		<div class="room-btn" id="room404"
-			onclick="location.href='reserve.do?roomId=404'"></div>
-		<div class="room-btn" id="room403"
-			onclick="location.href='reserve.do?roomId=403'"></div>
-		<div class="room-btn" id="room402"
-			onclick="location.href='reserve.do?roomId=402'"></div>
-		<div class="room-btn" id="room401"
-			onclick="location.href='reserve.do?roomId=401'"></div>
+    <div class="map-wrapper">
+        <div class="map-title">■ 4층 회의실 예약 (도면에서 원하시는 회의실을 클릭하세요)</div>
+        <div class="map-container">
+            <div class="room-btn" id="room404" onclick="location.href='reserve.do?roomId=404'"></div>
+            <div class="room-btn" id="room403" onclick="location.href='reserve.do?roomId=403'"></div>
+            <div class="room-btn" id="room402" onclick="location.href='reserve.do?roomId=402'"></div>
+            <div class="room-btn" id="room401" onclick="location.href='reserve.do?roomId=401'"></div>
 
-		<div class="room-btn" id="roomInterview"
-			onclick="location.href='reserve.do?roomId=Interview'"></div>
-		<div class="room-btn" id="roomConsult"
-			onclick="location.href='reserve.do?roomId=Consult'"></div>
-		<div class="room-btn" id="roomMeeting"
-			onclick="location.href='reserve.do?roomId=Meeting'"></div>
-	</div>
+            <div class="room-btn" id="roomInterview" onclick="location.href='reserve.do?roomId=Interview'"></div>
+            <div class="room-btn" id="roomConsult" onclick="location.href='reserve.do?roomId=Consult'"></div>
+            <div class="room-btn" id="roomMeeting" onclick="location.href='reserve.do?roomId=Meeting'"></div>
+        </div>
+    </div>
 
 </body>
 </html>
