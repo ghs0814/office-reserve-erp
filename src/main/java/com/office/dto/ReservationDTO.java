@@ -20,4 +20,5 @@ public class ReservationDTO {
     private String endTime;      // 이용 종료 시간 (예: 10:00)
     private String purpose;      // 회의 목적 또는 사용 용도
     private String status;       // 현재 예약 상태 (예약완료, 취소됨)
+    private java.sql.Timestamp expireTime;
 }
