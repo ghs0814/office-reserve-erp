@@ -37,15 +37,52 @@ if (loginEmp == null || eqInfo == null) {
     .btn-cancel:hover { background-color: #f8f9fa; }
 </style>
 <script>
-	function validateRentForm() {
-		const rentalDate = document.getElementById("rentalDate").value;
-		const returnDate = document.getElementById("returnDate").value;
-		if (rentalDate > returnDate) {
-			alert("반납 예정일은 대여 시작일보다 빠를 수 없습니다.");
-			return false;
-		}
-		return true;
-	}
+    document.addEventListener("DOMContentLoaded", function() {
+        const rentalDate = document.getElementById("rentalDate");
+        const returnDate = document.getElementById("returnDate");
+        
+        // 1. 오늘 날짜 구하기
+        const today = new Date();
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        
+        // 2. 초기 달력 세팅 (과거 날짜 클릭 금지)
+        rentalDate.setAttribute("min", todayStr);
+        returnDate.setAttribute("min", todayStr);
+        
+        // 3. 대여일이 바뀌면, 반납일의 최소 날짜를 대여일로 동기화
+        rentalDate.addEventListener("change", function() {
+            returnDate.setAttribute("min", this.value); 
+            
+            // 만약 이미 선택된 반납일이 새로운 대여일보다 과거라면 초기화
+            if(returnDate.value && returnDate.value < this.value) {
+                returnDate.value = this.value;
+            }
+        });
+    });
+
+    // 폼 최종 제출 전 검증 (더블 체크)
+    function validateRentForm() {
+        const rentalDate = document.getElementById("rentalDate").value;
+        const returnDate = document.getElementById("returnDate").value;
+        const reqCount = document.getElementsByName("reqCount")[0].value;
+
+        if (!rentalDate || !returnDate) {
+            alert("대여일과 반납일을 모두 지정해 주세요.");
+            return false;
+        }
+
+        if (rentalDate > returnDate) {
+            alert("반납 예정일은 대여 시작일보다 빠를 수 없습니다.");
+            return false;
+        }
+        
+        if (reqCount < 1) {
+            alert("대여 수량은 1개 이상이어야 합니다.");
+            return false;
+        }
+        
+        return true;
+    }
 </script>
 </head>
 <body>
