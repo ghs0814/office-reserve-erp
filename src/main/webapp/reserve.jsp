@@ -69,7 +69,7 @@
     }
 
     function startTimer(startStr, endStr) {
-        let timeLeft = 300; 
+        let timeLeft = 300; // 5분 (테스트용 10초로 변경 가능)
         const timerBox = document.getElementById("timerBox");
         const timeDisplay = document.getElementById("timeDisplay");
         const submitBtn = document.getElementById("submitBtn");
@@ -104,6 +104,11 @@
         const timeButtons = document.querySelectorAll('.time-btn');
         const resDateInput = document.getElementById("resDate");
         const holdBtn = document.getElementById("holdBtn");
+        
+        // ★ 오늘 날짜 구해서 달력(min)에 세팅하기 (과거 날짜 원천 차단)
+        const today = new Date();
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        resDateInput.setAttribute("min", todayStr);
         
         timeButtons.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -172,6 +177,14 @@
         resDateInput.addEventListener('change', function() {
             const selectedDate = this.value;
             if (!selectedDate) return;
+            
+            // 날짜 수동 입력 변경 시 과거 날짜인지 한 번 더 검증
+            if (selectedDate < todayStr) {
+                alert("과거 날짜는 예약할 수 없습니다.");
+                this.value = "";
+                return;
+            }
+            
             const roomId = document.getElementById("roomId").value;
 
             fetch('checkReservedTime.do?roomId=' + roomId + '&resDate=' + selectedDate)
@@ -186,8 +199,21 @@
                     document.getElementById("holdBtn").style.display = "block";
                     document.getElementById("resNo").value = "";
 
+                    // ★ 추가: 현재 시간 구하기 (오늘 날짜를 선택했을 때만 비교하기 위해)
+                    const now = new Date();
+                    const isToday = (selectedDate === todayStr); // 앞서 구한 todayStr과 비교
+                    const currentHour = now.getHours();
+
                     timeButtons.forEach(btn => {
-                        if (reservedTimes.includes(btn.getAttribute('data-time'))) {
+                        const btnTime = btn.getAttribute('data-time');
+                        const btnHour = parseInt(btnTime.split(':')[0]);
+
+                        // 1. 이미 다른 사람이 예약한 시간 비활성화
+                        if (reservedTimes.includes(btnTime)) {
+                            btn.disabled = true;
+                        }
+                        // 2. ★ 추가: 오늘 날짜이면서, 현재 시간보다 과거인 버튼 비활성화
+                        else if (isToday && btnHour <= currentHour) {
                             btn.disabled = true;
                         }
                     });
