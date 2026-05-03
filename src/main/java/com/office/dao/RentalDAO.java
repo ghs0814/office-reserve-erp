@@ -86,11 +86,15 @@ public class RentalDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        String sql = "SELECT h.*, e.EMP_NAME, e.EMP_LEVEL, eq.EQ_NAME, eq.TOTAL_COUNT, eq.REMAIN_COUNT "
-                   + "FROM RENTAL_HISTORY h "
-                   + "LEFT JOIN EMPLOYEE e ON h.EMP_NO = e.EMP_NO "
-                   + "LEFT JOIN EQUIPMENT eq ON h.EQ_NO = eq.EQ_NO "
-                   + "ORDER BY h.RENTAL_NO DESC";
+        String sql = "SELECT h.RENTAL_NO, h.TITLE, h.EMP_NO, h.EQ_NO, h.RENTAL_DATE, h.RETURN_DATE, "
+                + "CASE WHEN h.STATUS = '대여중' AND h.RETURN_DATE < TRUNC(SYSDATE) THEN '미반납' ELSE h.STATUS END AS STATUS, "
+                + "h.APPROVAL_STEP, h.SIGN1, h.SIGN1_DATE, h.SIGN2, h.SIGN2_DATE, h.SIGN3, h.SIGN3_DATE, "
+                + "h.SIGN4, h.SIGN4_DATE, h.SIGN5, h.SIGN5_DATE, h.REQ_COUNT, "
+                + "e.EMP_NAME, e.EMP_LEVEL, eq.EQ_NAME, eq.TOTAL_COUNT, eq.REMAIN_COUNT "
+                + "FROM RENTAL_HISTORY h "
+                + "LEFT JOIN EMPLOYEE e ON h.EMP_NO = e.EMP_NO "
+                + "LEFT JOIN EQUIPMENT eq ON h.EQ_NO = eq.EQ_NO "
+                + "ORDER BY h.RENTAL_NO DESC";
 
         try {
             conn = DBConnection.getConnection();
@@ -218,8 +222,14 @@ public class RentalDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        String sql = "SELECT h.*, e.EQ_NAME FROM RENTAL_HISTORY h JOIN EQUIPMENT e ON h.EQ_NO = e.EQ_NO WHERE h.EMP_NO = ? ORDER BY h.RENTAL_NO DESC";
-
+        String sql = "SELECT h.RENTAL_NO, h.TITLE, h.EMP_NO, h.EQ_NO, h.RENTAL_DATE, h.RETURN_DATE, "
+                + "CASE WHEN h.STATUS = '대여중' AND h.RETURN_DATE < TRUNC(SYSDATE) THEN '미반납' ELSE h.STATUS END AS STATUS, "
+                + "h.APPROVAL_STEP, h.SIGN1, h.SIGN1_DATE, h.SIGN2, h.SIGN2_DATE, h.SIGN3, h.SIGN3_DATE, "
+                + "h.SIGN4, h.SIGN4_DATE, h.SIGN5, h.SIGN5_DATE, h.REQ_COUNT, e.EQ_NAME "
+                + "FROM RENTAL_HISTORY h JOIN EQUIPMENT e ON h.EQ_NO = e.EQ_NO "
+                + "WHERE h.EMP_NO = ? ORDER BY h.RENTAL_NO DESC";
+        
+        
         try {
             conn = DBConnection.getConnection();
             if (conn != null) {
