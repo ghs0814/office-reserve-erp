@@ -1,9 +1,11 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%>
 <%@ page import="com.office.dto.RentalHistoryDTO"%>
 <%@ page import="com.office.dto.ReservationDTO"%>
 <%@ page import="com.office.dto.EmployeeDTO"%>
+<%@ page import="java.time.LocalDateTime"%>
+<%@ page import="java.time.LocalDate"%>
+<%@ page import="java.time.LocalTime"%>
 <%
 EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
 if (loginEmp == null) {
@@ -242,15 +244,32 @@ tr:hover {
 					if (reserveList == null || reserveList.isEmpty()) {
 					%>
 					<tr>
-						<td colspan="7" style="padding: 40px; color: #6c757d;">예약 내역이
-							없습니다.</td>
+						<td colspan="7" style="padding: 40px; color: #6c757d;">예약 내역이 없습니다.</td>
 					</tr>
 					<%
 					} else {
 					for (ReservationDTO dto : reserveList) {
+						String displayStatus = dto.getStatus();
 						String statusClass = "bg-primary";
-						if ("취소됨".equals(dto.getStatus()))
-							statusClass = "bg-danger";
+						
+						// ★ 추가된 로직: 현재 DB상 '예약완료'여도, 현재 시간이 종료 시간을 넘었는지 실시간 확인
+						if ("예약완료".equals(displayStatus)) {
+						    try {
+						        LocalDate rDate = ((java.sql.Date)dto.getResDate()).toLocalDate();
+						        LocalTime eTime = LocalTime.parse(dto.getEndTime());
+						        LocalDateTime endDateTime = LocalDateTime.of(rDate, eTime);
+						        
+						        // 현재 시간이 종료 시간보다 미래일 경우
+						        if (LocalDateTime.now().isAfter(endDateTime)) {
+						            displayStatus = "이용 종료";
+						            statusClass = "bg-secondary"; // 이용 종료는 회색 배지
+						        }
+						    } catch (Exception e) {
+						        // 날짜 파싱 오류 대비
+						    }
+						} else if ("취소됨".equals(displayStatus)) {
+						    statusClass = "bg-danger";
+						}
 					%>
 					<tr>
 						<td style="color: #6c757d;"><%=dto.getResNo()%></td>
@@ -258,18 +277,21 @@ tr:hover {
 						<td><%=dto.getResDate()%></td>
 						<td><%=dto.getStartTime()%> ~ <%=dto.getEndTime()%></td>
 						<td><%=dto.getPurpose()%></td>
-						<td><span class="status-badge <%=statusClass%>"><%=dto.getStatus()%></span></td>
+						<td><span class="status-badge <%=statusClass%>"><%=displayStatus%></span></td>
 						<td>
+							<!-- ★ 수정된 로직: 실시간 상태가 '예약완료'일 때만 예약 취소 버튼을 노출 -->
 							<%
-							if ("예약완료".equals(dto.getStatus())) {
+							if ("예약완료".equals(displayStatus)) {
 							%>
 							<button class="btn-action btn-cancel"
-								onclick="cancelReserve(<%=dto.getResNo()%>)">예약 취소</button> <%
- } else {
- %>
-							<span style="color: #ced4da;">-</span> <%
- }
- %>
+								onclick="cancelReserve(<%=dto.getResNo()%>)">예약 취소</button> 
+							<%
+							} else {
+							%>
+							<span style="color: #ced4da;">-</span> 
+							<%
+							}
+							%>
 						</td>
 					</tr>
 					<%
@@ -314,7 +336,7 @@ tr:hover {
 						else if ("반려됨".equals(status))
 							badgeClass = "bg-danger";
 						else if ("미반납".equals(status))
-							badgeClass = "bg-danger"; // ★ 미반납 배지(빨간색) 추가
+							badgeClass = "bg-danger"; 
 					%>
 					<tr>
 						<td style="color: #6c757d;"><%=item.getRentalNo()%></td>
@@ -323,16 +345,16 @@ tr:hover {
 						<td><%=item.getRentalDate()%> ~ <%=item.getReturnDate()%></td>
 						<td><span class="status-badge <%=badgeClass%>"><%=status%></span></td>
 						<td>
-							<!-- ★ '대여중' 이거나 '미반납' 일 때 반납 버튼 노출 --> <%
- if ("대여중".equals(status) || "미반납".equals(status)) {
- %>
+							<%
+							if ("대여중".equals(status) || "미반납".equals(status)) {
+							%>
 							<button class="btn-action btn-return"
 								onclick="processReturn('<%=item.getRentalNo()%>')">반납
 								처리</button> <%
- } else {
- %> <span style="color: #ced4da;">-</span> <%
- }
- %>
+							} else {
+							%> <span style="color: #ced4da;">-</span> <%
+							}
+							%>
 						</td>
 					</tr>
 					<%

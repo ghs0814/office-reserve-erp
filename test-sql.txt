@@ -1,0 +1,49 @@
+-- ==========================================
+-- [추가] 실사용 느낌을 위한 동적 더미 데이터 삽입
+-- ==========================================
+
+-- 1. 회의실 예약 데이터 (과거, 현재, 취소, 미래 데이터 골고루 분포)
+-- 1) 어제 진행된 회의 (이용 종료 상태용)
+INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
+VALUES (SEQ_RESERVATION.NEXTVAL, 5, '401', TRUNC(SYSDATE-1), '10:00', '12:00', '주간 부서 실적 보고', '예약완료');
+
+-- 2) 오늘 진행 중/예정된 회의 (예약 완료)
+INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
+VALUES (SEQ_RESERVATION.NEXTVAL, 4, '403', TRUNC(SYSDATE), '14:00', '16:00', '신규 프로젝트 킥오프', '예약완료');
+
+-- 3) 취소된 예약
+INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
+VALUES (SEQ_RESERVATION.NEXTVAL, 3, 'Interview1', TRUNC(SYSDATE+1), '09:00', '11:00', '경력직 1차 면접 (일정 연기)', '취소됨');
+
+-- 4) 임시 선점 중인 고스트 데이터 (5분 만료 테스트용 - 어제 날짜로 강제 세팅하여 쓰레기 데이터 연출)
+INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS, EXPIRE_TIME) 
+VALUES (SEQ_RESERVATION.NEXTVAL, 2, 'Meeting2', TRUNC(SYSDATE), '17:00', '18:00', '임시 선점 데이터', '임시선점', SYSDATE - 1);
+
+
+-- 2. 비품 대여 기안 데이터 (5단계 결재 및 상태 시뮬레이션)
+-- 1) [대여중] 최종 5단계 승인 완료 후 사용 중인 비품
+INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE)
+VALUES (SEQ_RENTAL.NEXTVAL, '신입사원 OJT용 맥북 대여', 5, 1, 2, TRUNC(SYSDATE-2), TRUNC(SYSDATE+5), '대여중', 5, 
+        '최대리', SYSDATE-2, '박과장', SYSDATE-2, '이차장', SYSDATE-2, '김대표', SYSDATE-2, '김대표', SYSDATE-1);
+-- (트리거가 없으므로 수동 재고 차감)
+UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 2 WHERE EQ_NO = 1;
+
+-- 2) [승인대기] 2단계(과장) 결재 대기 중인 기안 (1단계 대리만 승인함)
+INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE)
+VALUES (SEQ_RENTAL.NEXTVAL, '디자인팀 테스트용 모니터 대여', 5, 4, 3, TRUNC(SYSDATE+1), TRUNC(SYSDATE+7), '승인대기', 2, 
+        '최대리', SYSDATE);
+
+-- 3) [미반납] 대여 기간이 지났는데 반납하지 않은 연체 상태
+INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE)
+VALUES (SEQ_RENTAL.NEXTVAL, '외근용 보조배터리', 4, 12, 1, TRUNC(SYSDATE-10), TRUNC(SYSDATE-2), '대여중', 5, 
+        '최대리', SYSDATE-10, '박과장', SYSDATE-10, '이차장', SYSDATE-10, '김대표', SYSDATE-10, '김대표', SYSDATE-9);
+UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 1 WHERE EQ_NO = 12;
+
+-- 4) [반려됨] 1단계 결재에서 곧바로 반려된 기안
+INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP)
+VALUES (SEQ_RENTAL.NEXTVAL, '사유 불분명 태블릿 요청', 5, 3, 1, TRUNC(SYSDATE), TRUNC(SYSDATE+2), '반려됨', 1);
+
+COMMIT;
