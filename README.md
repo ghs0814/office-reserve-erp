@@ -20,17 +20,17 @@
 ## 🛠 기술 스택 (Tech Stack)
 
 ### Backend
-- **Java 8** : 객체 지향적 비즈니스 로직 구현
-- **JSP / Servlet** : MVC 패턴을 적용한 아키텍처 설계
-- **Lombok** : DTO 보일러플레이트 코드 최소화 및 유지보수성 향상
+- **Java 8** 
+- **JSP / Servlet** 
+- **Lombok** 
 
 ### Database
-- **Oracle 11g / H2 DB** : 관계형 데이터베이스를 활용한 구조적 데이터 관리
-- **HikariCP** : 고성능 커넥션 풀(Connection Pool) 적용으로 DB 연동 속도 및 안정성 최적화
+- **Oracle 11g / H2 DB** 
+- **HikariCP** 
 
 ### Frontend
 - **HTML5 / CSS3 / JavaScript**
-- **AJAX (Fetch API)** : 비동기 통신을 통한 실시간 예약 가능 시간 검증 및 화면 렌더링
+- **AJAX (Fetch API)** 
 
 ---
 
