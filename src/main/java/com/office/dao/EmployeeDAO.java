@@ -250,4 +250,31 @@ public class EmployeeDAO {
         }
         return pw;
     }
+    
+    /**
+     * [관리자용] 신규 사원 사전 등록
+     * 비밀번호(EMP_PW)는 비워두고 사번, 이름, 직급, 관리자 여부만 초기 세팅합니다.
+     */
+    public boolean insertEmployee(EmployeeDTO dto) {
+        boolean result = false;
+        // 비밀번호는 제외하고 INSERT 진행
+        String sql = "INSERT INTO EMPLOYEE (EMP_NO, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (?, ?, ?, ?)";
+
+        try (java.sql.Connection conn = com.office.util.DBConnection.getConnection(); 
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, dto.getEmpNo());
+            pstmt.setString(2, dto.getEmpName());
+            pstmt.setInt(3, dto.getEmpLevel());
+            pstmt.setString(4, dto.getManager());
+
+            int count = pstmt.executeUpdate();
+            if (count > 0) {
+                result = true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 }
