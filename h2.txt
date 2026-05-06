@@ -1,0 +1,31 @@
+<--- h2 db 사용하는 경우 -->
+util-DBConnection - h2 mode check
+http://localhost:8080/OfficeReserveERP/h2-console 접속
+
+
+### 📌 H2 콘솔 접속 방법
+
+1. **JDBC URL 변경**: 화면에 `jdbc:h2:~/test`로 되어 있는 부분을 모두 지우고, 우리가 자바 코드에 적어둔 주소로 똑같이 바꿔주세요.
+jdbc:h2:~/office_db;MODE=Oracle;AUTO_SERVER=TRUE
+2. **User Name**: sa (캡처 화면에 있는 그대로 둡니다)
+3. **Password**: (빈칸으로 둡니다)
+4. **Connect 버튼 클릭**: 위 내용을 확인한 후 하단의 Connect 버튼을 누릅니다.
+
+
+##error
+DBConnection.java의 데이터베이스 생성 로직이 아직 실행되지 않아서 발생하는 현상
+### 🛠️ 데이터베이스 파일 강제 생성 및 접속 방법
+
+**1. 아무 기능이나 한 번 실행시켜서 자바 깨우기**
+
+- 인터넷 브라우저 새 탭을 열고, 프로젝트의 비품 목록 화면(예: `http://localhost:8080/본인프로젝트명/adminEqList.do` 또는 `equipmentList.do`)으로 접속해 봅니다.
+- 테이블이 아직 없기 때문에 화면에 500 에러가 뜰 것입니다. **(이 에러가 뜨는 것이 정상이며, 아주 잘된 것입니다!)**
+- 화면에 접근하려는 순간 자바가 `DBConnection` 클래스를 부르면서 내 컴퓨터(C:/Users/user/)에 `office_db.mv.db`라는 파일을 방금 막 생성했습니다.
+
+**2. H2 콘솔 다시 접속하기**
+
+- 다시 H2 콘솔 로그인 화면 탭으로 돌아옵니다.
+- 아까 입력했던 정보 그대로 다시 **Connect** 버튼을 누릅니다.
+    - **JDBC URL:** `jdbc:h2:~/office_db;MODE=Oracle;AUTO_SERVER=TRUE`
+    - **User Name:** `sa`
+    - **Password:** (빈칸)
