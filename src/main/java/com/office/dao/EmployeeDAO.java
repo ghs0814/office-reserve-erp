@@ -200,81 +200,109 @@ public class EmployeeDAO {
 
 	// 3. 퇴사 처리 (데이터 영구 삭제)
 	// 주의: 실제 실무에서는 DELETE 대신 status='퇴사' 로 UPDATE 하지만, 요청하신 대로 삭제 처리합니다.
+//	public boolean deleteEmployee(int empNo) {
+//		boolean result = false;
+//		String sql = "DELETE FROM EMPLOYEE WHERE emp_no = ?";
+//
+//		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//
+//			pstmt.setInt(1, empNo);
+//
+//			if (pstmt.executeUpdate() > 0)
+//				result = true;
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return result;
+//	}
+	/**
+	 * [관리자용] 사원 퇴사 처리 (Soft Delete 방식) 실제 데이터를 삭제하지 않고, 비밀번호를 변경하여 로그인을 차단하고 모든 권한을
+	 * 회수합니다.
+	 */
 	public boolean deleteEmployee(int empNo) {
 		boolean result = false;
-		String sql = "DELETE FROM EMPLOYEE WHERE emp_no = ?";
 
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		// DELETE 쿼리 대신 UPDATE 쿼리를 사용하여 계정을 비활성화(잠금) 처리합니다.
+		// EMP_PW를 'RETIRED'로 바꾸어 기존 비밀번호로 로그인할 수 없게 만듭니다.
+		String sql = "UPDATE EMPLOYEE SET EMP_PW = 'RETIRED', EMP_LEVEL = 0, MANAGER = 'N' WHERE EMP_NO = ?";
+
+		try (java.sql.Connection conn = com.office.util.DBConnection.getConnection();
+				java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setInt(1, empNo);
 
-			if (pstmt.executeUpdate() > 0)
+			int count = pstmt.executeUpdate();
+			if (count > 0) {
 				result = true;
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return result;
 	}
+
 	// 사번과 이름으로 비밀번호 찾기 메서드
-    public String findPassword(int empNo, String empName) {
-        String pw = null;
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+	public String findPassword(int empNo, String empName) {
+		String pw = null;
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
 
-        // 사번과 이름이 모두 일치하는 데이터의 비밀번호를 가져옵니다.
-        String sql = "SELECT EMP_PW FROM EMPLOYEE WHERE EMP_NO = ? AND EMP_NAME = ?";
+		// 사번과 이름이 모두 일치하는 데이터의 비밀번호를 가져옵니다.
+		String sql = "SELECT EMP_PW FROM EMPLOYEE WHERE EMP_NO = ? AND EMP_NAME = ?";
 
-        try {
-            conn = DBConnection.getConnection();
-            if (conn != null) {
-                pstmt = conn.prepareStatement(sql);
-                pstmt.setInt(1, empNo);
-                pstmt.setString(2, empName);
-                rs = pstmt.executeQuery();
+		try {
+			conn = DBConnection.getConnection();
+			if (conn != null) {
+				pstmt = conn.prepareStatement(sql);
+				pstmt.setInt(1, empNo);
+				pstmt.setString(2, empName);
+				rs = pstmt.executeQuery();
 
-                if (rs.next()) {
-                    pw = rs.getString("EMP_PW");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return pw;
-    }
-    
-    /**
-     * [관리자용] 신규 사원 사전 등록
-     * 비밀번호(EMP_PW)는 비워두고 사번, 이름, 직급, 관리자 여부만 초기 세팅합니다.
-     */
-    public boolean insertEmployee(EmployeeDTO dto) {
-        boolean result = false;
-        // 비밀번호는 제외하고 INSERT 진행
-        String sql = "INSERT INTO EMPLOYEE (EMP_NO, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (?, ?, ?, ?)";
+				if (rs.next()) {
+					pw = rs.getString("EMP_PW");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (pstmt != null)
+					pstmt.close();
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return pw;
+	}
 
-        try (java.sql.Connection conn = com.office.util.DBConnection.getConnection(); 
-             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	/**
+	 * [관리자용] 신규 사원 사전 등록 비밀번호(EMP_PW)는 비워두고 사번, 이름, 직급, 관리자 여부만 초기 세팅합니다.
+	 */
+	public boolean insertEmployee(EmployeeDTO dto) {
+		boolean result = false;
+		// 비밀번호는 제외하고 INSERT 진행
+		String sql = "INSERT INTO EMPLOYEE (EMP_NO, EMP_NAME, EMP_LEVEL, MANAGER) VALUES (?, ?, ?, ?)";
 
-            pstmt.setInt(1, dto.getEmpNo());
-            pstmt.setString(2, dto.getEmpName());
-            pstmt.setInt(3, dto.getEmpLevel());
-            pstmt.setString(4, dto.getManager());
+		try (java.sql.Connection conn = com.office.util.DBConnection.getConnection();
+				java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            int count = pstmt.executeUpdate();
-            if (count > 0) {
-                result = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
+			pstmt.setInt(1, dto.getEmpNo());
+			pstmt.setString(2, dto.getEmpName());
+			pstmt.setInt(3, dto.getEmpLevel());
+			pstmt.setString(4, dto.getManager());
+
+			int count = pstmt.executeUpdate();
+			if (count > 0) {
+				result = true;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
 }

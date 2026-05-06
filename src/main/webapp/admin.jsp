@@ -184,78 +184,71 @@ select {
 					<%
 					if (empList != null) {
 						for (EmployeeDTO emp : empList) {
+							// 퇴사자 여부 판별 (레벨이 0이거나 비밀번호가 RETIRED인 경우)
+							boolean isRetired = (emp.getEmpLevel() == 0);
 					%>
-					<tr>
+					<!-- 퇴사자는 행 전체를 약간 투명하게(opacity) 처리하여 시각적으로 분리 -->
+					<tr <%= isRetired ? "style='opacity: 0.6; background-color: #f8f9fa;'" : "" %>>
 						<td style="color: #6c757d;"><%=emp.getEmpNo()%></td>
-						<td style="font-weight: 600; color: #343a40;"><%=emp.getEmpName()%></td>
+						<td style="font-weight: 600; color: <%= isRetired ? "#adb5bd" : "#343a40" %>;"><%=emp.getEmpName()%></td>
 
+						<!-- 권한 레벨 조정 셀 -->
 						<td>
-							<form action="adminAction.do" method="post"
-								style="margin: 0; display: flex; justify-content: center; gap: 5px; align-items: center;">
-								<input type="hidden" name="action" value="updateLevel">
-								<input type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
-								<select name="newLevel">
-									<option value="1"
-										<%=emp.getEmpLevel() == 1 ? "selected" : ""%>>1단계
-										(일반)</option>
-									<option value="2"
-										<%=emp.getEmpLevel() == 2 ? "selected" : ""%>>2단계</option>
-									<option value="3"
-										<%=emp.getEmpLevel() == 3 ? "selected" : ""%>>3단계</option>
-									<option value="4"
-										<%=emp.getEmpLevel() == 4 ? "selected" : ""%>>4단계
-										(부서장)</option>
-									<option value="5"
-										<%=emp.getEmpLevel() == 5 ? "selected" : ""%>>5단계
-										(임원)</option>
-								</select>
-								<button type="submit" class="btn-action btn-update">권한
-									수정</button>
-							</form>
+							<% if (isRetired) { %>
+								<span style="color: #dc3545; font-weight: bold; font-size: 13px;">퇴사자 (접근 차단)</span>
+							<% } else { %>
+								<form action="adminAction.do" method="post"
+									style="margin: 0; display: flex; justify-content: center; gap: 5px; align-items: center;">
+									<input type="hidden" name="action" value="updateLevel">
+									<input type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
+									<select name="newLevel">
+										<option value="1" <%=emp.getEmpLevel() == 1 ? "selected" : ""%>>1단계 (일반)</option>
+										<option value="2" <%=emp.getEmpLevel() == 2 ? "selected" : ""%>>2단계</option>
+										<option value="3" <%=emp.getEmpLevel() == 3 ? "selected" : ""%>>3단계</option>
+										<option value="4" <%=emp.getEmpLevel() == 4 ? "selected" : ""%>>4단계 (부서장)</option>
+										<option value="5" <%=emp.getEmpLevel() == 5 ? "selected" : ""%>>5단계 (임원)</option>
+									</select>
+									<button type="submit" class="btn-action btn-update">권한 수정</button>
+								</form>
+							<% } %>
 						</td>
 
+						<!-- 시스템 권한 셀 -->
 						<td>
-							<%
-							if ("Y".equals(emp.getManager())) {
-							%> <span
-							class="badge-manager">최고 관리자</span> <%
- } else {
- %> <span
-							class="badge-normal">일반 사원</span> <%
- }
- %>
+							<% if (isRetired) { %>
+								<span class="badge-normal" style="background-color: #ffe3e3; color: #c92a2a; border-color: #ffc9c9;">권한 소멸</span>
+							<% } else if ("Y".equals(emp.getManager())) { %> 
+								<span class="badge-manager">최고 관리자</span> 
+							<% } else { %> 
+								<span class="badge-normal">일반 사원</span> 
+							<% } %>
 						</td>
 
+						<!-- 인사 관리 (위임/퇴사) 셀 -->
 						<td>
-							<%
-							if (loginEmp != null && emp.getEmpNo() != loginEmp.getEmpNo()) {
-							%>
-							<form action="adminAction.do" method="post"
-								style="display: inline;">
-								<input type="hidden" name="action" value="transferManager">
-								<input type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
-								<button type="submit" class="btn-action btn-transfer"
-									onclick="return confirm('해당 사원에게 최고 관리자 권한을 위임하시겠습니까? (본인은 일반 권한으로 강등됩니다)');">마스터
-									위임</button>
-							</form>
+							<% if (isRetired) { %>
+								<span style="color: #adb5bd; font-size: 13px; font-weight: bold;">[퇴사 처리 완료]</span>
+							<% } else if (loginEmp != null && emp.getEmpNo() != loginEmp.getEmpNo()) { %>
+								<form action="adminAction.do" method="post" style="display: inline;">
+									<input type="hidden" name="action" value="transferManager">
+									<input type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
+									<button type="submit" class="btn-action btn-transfer"
+										onclick="return confirm('해당 사원에게 최고 관리자 권한을 위임하시겠습니까? (본인은 일반 권한으로 강등됩니다)');">마스터 위임</button>
+								</form>
 
-							<form action="adminAction.do" method="post"
-								style="display: inline;">
-								<input type="hidden" name="action" value="deleteEmp"> <input
-									type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
-								<button type="submit" class="btn-action btn-delete"
-									onclick="return confirm('경고: 사원 정보를 시스템에서 영구히 삭제(퇴사 처리)하시겠습니까?');">퇴사
-									처리</button>
-							</form> <%
- } else {
- %> <span style="color: #adb5bd; font-size: 12px;">본인
-								계정</span> <%
- }
- %>
+								<form action="adminAction.do" method="post" style="display: inline;">
+									<input type="hidden" name="action" value="deleteEmp"> 
+									<input type="hidden" name="empNo" value="<%=emp.getEmpNo()%>">
+									<button type="submit" class="btn-action btn-delete"
+										onclick="return confirm('경고: 해당 사원을 퇴사 처리하시겠습니까? (시스템 접근이 영구 차단됩니다)');">퇴사 처리</button>
+								</form> 
+							<% } else { %> 
+								<span style="color: #adb5bd; font-size: 12px;">본인 계정</span> 
+							<% } %>
 						</td>
 					</tr>
 					<%
-					}
+						}
 					}
 					%>
 				</tbody>
