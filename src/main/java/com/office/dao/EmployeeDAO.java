@@ -17,32 +17,63 @@ public class EmployeeDAO {
 	/**
 	 * 로그인 체크: 사번(empNo)과 비밀번호(empPw)가 일치하면 사원 정보를 반환합니다. (아이디 대신 사번으로 로그인하도록 수정됨)
 	 */
+//	public EmployeeDTO loginCheck(String loginNo, String loginPw) {
+//		EmployeeDTO dto = null;
+//		// LOGIN_ID 대신 EMP_NO를 조회 조건으로 사용합니다.
+//		String sql = "SELECT emp_no, emp_pw, emp_name, emp_level, manager FROM EMPLOYEE WHERE emp_no = ? AND emp_pw = ?";
+//
+//		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//
+//			pstmt.setString(1, loginNo);
+//			pstmt.setString(2, loginPw);
+//
+//			try (ResultSet rs = pstmt.executeQuery()) {
+//				if (rs.next()) {
+//					dto = new EmployeeDTO();
+//					dto.setEmpNo(rs.getInt("emp_no"));
+//					dto.setEmpPw(rs.getString("emp_pw"));
+//					dto.setEmpName(rs.getString("emp_name"));
+//					dto.setEmpLevel(rs.getInt("emp_level"));
+//					dto.setManager(rs.getString("manager"));
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return dto;
+//	}
+	// 1. loginCheck 메서드 수정
 	public EmployeeDTO loginCheck(String loginNo, String loginPw) {
-		EmployeeDTO dto = null;
-		// LOGIN_ID 대신 EMP_NO를 조회 조건으로 사용합니다.
-		String sql = "SELECT emp_no, emp_pw, emp_name, emp_level, manager FROM EMPLOYEE WHERE emp_no = ? AND emp_pw = ?";
+	    EmployeeDTO dto = null;
+	    // SQL문에 dept, max_leave, cur_leave 추가
+	    String sql = "SELECT emp_no, emp_pw, emp_name, emp_level, manager, dept, max_leave, cur_leave "
+	               + "FROM EMPLOYEE WHERE emp_no = ? AND emp_pw = ?";
 
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (Connection conn = DBConnection.getConnection(); 
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-			pstmt.setString(1, loginNo);
-			pstmt.setString(2, loginPw);
+	        pstmt.setString(1, loginNo);
+	        pstmt.setString(2, loginPw);
 
-			try (ResultSet rs = pstmt.executeQuery()) {
-				if (rs.next()) {
-					dto = new EmployeeDTO();
-					dto.setEmpNo(rs.getInt("emp_no"));
-					dto.setEmpPw(rs.getString("emp_pw"));
-					dto.setEmpName(rs.getString("emp_name"));
-					dto.setEmpLevel(rs.getInt("emp_level"));
-					dto.setManager(rs.getString("manager"));
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return dto;
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                dto = new EmployeeDTO();
+	                dto.setEmpNo(rs.getInt("emp_no"));
+	                dto.setEmpPw(rs.getString("emp_pw"));
+	                dto.setEmpName(rs.getString("emp_name"));
+	                dto.setEmpLevel(rs.getInt("emp_level"));
+	                dto.setManager(rs.getString("manager"));
+	                // ★ 추가된 필드 세팅
+	                dto.setDept(rs.getString("dept"));
+	                dto.setMaxLeave(rs.getInt("max_leave"));
+	                dto.setCurLeave(rs.getInt("cur_leave"));
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return dto;
 	}
-
 	/**
 	 * 회원가입(정보 업데이트): 초기 사원 데이터에 사용자가 입력한 비밀번호를 업데이트합니다. (이제 INSERT가 아니라, 이미 존재하는 사원
 	 * 정보에 PW만 UPDATE 하는 방식으로 변경됨)
@@ -70,27 +101,57 @@ public class EmployeeDAO {
 	/**
 	 * 사번으로 사원 정보(이름, 직급, 매니저 여부)를 조회하는 기능 (회원가입 전 정보 확인용)
 	 */
+//	public EmployeeDTO getEmployeeByNo(String empNo) {
+//		EmployeeDTO dto = null;
+//		String sql = "SELECT emp_no, emp_name, emp_level, manager FROM EMPLOYEE WHERE emp_no = ?";
+//
+//		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//
+//			pstmt.setString(1, empNo);
+//
+//			try (ResultSet rs = pstmt.executeQuery()) {
+//				if (rs.next()) {
+//					dto = new EmployeeDTO();
+//					dto.setEmpNo(rs.getInt("emp_no"));
+//					dto.setEmpName(rs.getString("emp_name"));
+//					dto.setEmpLevel(rs.getInt("emp_level"));
+//					dto.setManager(rs.getString("manager"));
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return dto;
+//	}
+	// 2. getEmployeeByNo 메서드 수정 (회원가입 시 정보 확인용)
 	public EmployeeDTO getEmployeeByNo(String empNo) {
-		EmployeeDTO dto = null;
-		String sql = "SELECT emp_no, emp_name, emp_level, manager FROM EMPLOYEE WHERE emp_no = ?";
+	    EmployeeDTO dto = null;
+	    // SQL문에 dept, max_leave, cur_leave 추가
+	    String sql = "SELECT emp_no, emp_name, emp_level, manager, dept, max_leave, cur_leave "
+	               + "FROM EMPLOYEE WHERE emp_no = ?";
 
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (Connection conn = DBConnection.getConnection(); 
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-			pstmt.setString(1, empNo);
+	        pstmt.setString(1, empNo);
 
-			try (ResultSet rs = pstmt.executeQuery()) {
-				if (rs.next()) {
-					dto = new EmployeeDTO();
-					dto.setEmpNo(rs.getInt("emp_no"));
-					dto.setEmpName(rs.getString("emp_name"));
-					dto.setEmpLevel(rs.getInt("emp_level"));
-					dto.setManager(rs.getString("manager"));
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return dto;
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                dto = new EmployeeDTO();
+	                dto.setEmpNo(rs.getInt("emp_no"));
+	                dto.setEmpName(rs.getString("emp_name"));
+	                dto.setEmpLevel(rs.getInt("emp_level"));
+	                dto.setManager(rs.getString("manager"));
+	                // ★ 추가된 필드 세팅
+	                dto.setDept(rs.getString("dept"));
+	                dto.setMaxLeave(rs.getInt("max_leave"));
+	                dto.setCurLeave(rs.getInt("cur_leave"));
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return dto;
 	}
 
 	// 관리자 페이지용: 전체 사원 목록 조회

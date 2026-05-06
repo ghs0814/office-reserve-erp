@@ -17,7 +17,7 @@ if (loginEmp == null) {
 	
 	/* 상단 메뉴바 스타일 */
 	.header { display: flex; justify-content: space-between; align-items: center; background-color: #212529; color: #ffffff; padding: 15px 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 30px; }
-	.header h2 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+	.header h2 { margin: 0; font-size: 20px; letter-spacing: 1px; cursor: pointer; } /* ★ 마우스 포인터 추가 */
 	.nav-buttons { display: flex; align-items: center; gap: 10px; }
 	.nav-btn { padding: 8px 16px; background-color: #343a40; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 13px; border: 1px solid #495057; transition: all 0.2s; }
 	.nav-btn:hover { background-color: #495057; border-color: #6c757d; }
@@ -68,7 +68,8 @@ if (loginEmp == null) {
 <body>
 
 	<div class="header">
-		<h2>Groupware</h2>
+        <!-- ★ Groupware 글자 클릭 시 메인으로 이동하도록 수정 -->
+		<a href="main.jsp" style="text-decoration: none; color: inherit;"><h2>Groupware</h2></a>
 		<div class="nav-buttons">
 			<% if ("Y".equals(loginEmp.getManager())) { %>
 				<span style="color: #ffc107; font-weight: bold; font-size: 13px; margin-right: 5px;">[관리자]</span>
@@ -81,8 +82,9 @@ if (loginEmp == null) {
                 <span style="color: #495057;">|</span>
 			<% } %>
             
-            <!-- 오피스 예약 버튼 활성화 표시 -->
-			<a href="officeMap.jsp" class="nav-btn" style="background-color: #007bff; border-color: #0056b3;">오피스 예약</a>
+            <!-- ★ 오피스 예약 및 휴가 신청 버튼 스타일 통일 (인라인 스타일 제거) -->
+			<a href="officeMap.jsp" class="nav-btn">오피스 예약</a>
+			<a href="leaveForm.do" class="nav-btn">휴가 신청</a>
 			<a href="equipmentList.do" class="nav-btn">비품 대여 신청</a>
 			<a href="documentList.do" class="nav-btn">기안 문서함</a>	
 			<a href="myPage.do" class="nav-btn">마이페이지</a>

@@ -31,18 +31,21 @@ public class MyPageController extends HttpServlet {
             return;
         }
 
-        // 1. 내 비품 대여 내역 가져오기
+        // 1. 내 비품 대여 내역
         RentalDAO rentalDao = new RentalDAO();
         List<RentalHistoryDTO> myList = rentalDao.getMyRentalList(loginEmp.getEmpNo()); 
         request.setAttribute("myList", myList);
 
-        // 2. 내 회의실 예약 내역 가져오기
+        // 2. 내 회의실 예약 내역
         ReservationDAO reserveDao = new ReservationDAO();
         List<ReservationDTO> reserveList = reserveDao.getMyReservations(loginEmp.getEmpNo());
         request.setAttribute("reserveList", reserveList);
 
-        // 3. 통합 마이페이지로 이동
-        RequestDispatcher dispatcher = request.getRequestDispatcher("myPage.jsp");
-        dispatcher.forward(request, response);
+        // ★ 3. 내 휴가 신청 내역 추가 (이 부분이 없으면 JSP에서 에러남)
+        com.office.dao.LeaveDAO leaveDao = new com.office.dao.LeaveDAO();
+        List<com.office.dto.LeaveHistoryDTO> leaveList = leaveDao.getMyLeaveList(loginEmp.getEmpNo());
+        request.setAttribute("leaveList", leaveList);
+
+        request.getRequestDispatcher("myPage.jsp").forward(request, response);
     }
 }

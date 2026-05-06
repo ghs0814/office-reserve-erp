@@ -1,4 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%>
 <%@ page import="com.office.dto.RentalHistoryDTO"%>
 <%@ page import="com.office.dto.ReservationDTO"%>
@@ -6,6 +7,8 @@
 <%@ page import="java.time.LocalDateTime"%>
 <%@ page import="java.time.LocalDate"%>
 <%@ page import="java.time.LocalTime"%>
+<%@ page import="com.office.dto.LeaveHistoryDTO"%>
+<%-- ★ 이 줄이 꼭 있어야 합니다! --%>
 <%
 EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
 if (loginEmp == null) {
@@ -15,6 +18,7 @@ if (loginEmp == null) {
 
 List<RentalHistoryDTO> myList = (List<RentalHistoryDTO>) request.getAttribute("myList");
 List<ReservationDTO> reserveList = (List<ReservationDTO>) request.getAttribute("reserveList");
+List<LeaveHistoryDTO> leaveList = (List<LeaveHistoryDTO>) request.getAttribute("leaveList"); // ★ 컨트롤러에서 보내준 데이터
 %>
 <!DOCTYPE html>
 <html>
@@ -244,31 +248,32 @@ tr:hover {
 					if (reserveList == null || reserveList.isEmpty()) {
 					%>
 					<tr>
-						<td colspan="7" style="padding: 40px; color: #6c757d;">예약 내역이 없습니다.</td>
+						<td colspan="7" style="padding: 40px; color: #6c757d;">예약 내역이
+							없습니다.</td>
 					</tr>
 					<%
 					} else {
 					for (ReservationDTO dto : reserveList) {
 						String displayStatus = dto.getStatus();
 						String statusClass = "bg-primary";
-						
+
 						// ★ 추가된 로직: 현재 DB상 '예약완료'여도, 현재 시간이 종료 시간을 넘었는지 실시간 확인
 						if ("예약완료".equals(displayStatus)) {
-						    try {
-						        LocalDate rDate = ((java.sql.Date)dto.getResDate()).toLocalDate();
-						        LocalTime eTime = LocalTime.parse(dto.getEndTime());
-						        LocalDateTime endDateTime = LocalDateTime.of(rDate, eTime);
-						        
-						        // 현재 시간이 종료 시간보다 미래일 경우
-						        if (LocalDateTime.now().isAfter(endDateTime)) {
-						            displayStatus = "이용 종료";
-						            statusClass = "bg-secondary"; // 이용 종료는 회색 배지
-						        }
-						    } catch (Exception e) {
-						        // 날짜 파싱 오류 대비
-						    }
+							try {
+						LocalDate rDate = ((java.sql.Date) dto.getResDate()).toLocalDate();
+						LocalTime eTime = LocalTime.parse(dto.getEndTime());
+						LocalDateTime endDateTime = LocalDateTime.of(rDate, eTime);
+
+						// 현재 시간이 종료 시간보다 미래일 경우
+						if (LocalDateTime.now().isAfter(endDateTime)) {
+							displayStatus = "이용 종료";
+							statusClass = "bg-secondary"; // 이용 종료는 회색 배지
+						}
+							} catch (Exception e) {
+						// 날짜 파싱 오류 대비
+							}
 						} else if ("취소됨".equals(displayStatus)) {
-						    statusClass = "bg-danger";
+							statusClass = "bg-danger";
 						}
 					%>
 					<tr>
@@ -279,19 +284,15 @@ tr:hover {
 						<td><%=dto.getPurpose()%></td>
 						<td><span class="status-badge <%=statusClass%>"><%=displayStatus%></span></td>
 						<td>
-							<!-- ★ 수정된 로직: 실시간 상태가 '예약완료'일 때만 예약 취소 버튼을 노출 -->
-							<%
-							if ("예약완료".equals(displayStatus)) {
-							%>
+							<!-- ★ 수정된 로직: 실시간 상태가 '예약완료'일 때만 예약 취소 버튼을 노출 --> <%
+ if ("예약완료".equals(displayStatus)) {
+ %>
 							<button class="btn-action btn-cancel"
-								onclick="cancelReserve(<%=dto.getResNo()%>)">예약 취소</button> 
-							<%
-							} else {
-							%>
-							<span style="color: #ced4da;">-</span> 
-							<%
-							}
-							%>
+								onclick="cancelReserve(<%=dto.getResNo()%>)">예약 취소</button> <%
+ } else {
+ %> <span style="color: #ced4da;">-</span> <%
+ }
+ %>
 						</td>
 					</tr>
 					<%
@@ -336,7 +337,7 @@ tr:hover {
 						else if ("반려됨".equals(status))
 							badgeClass = "bg-danger";
 						else if ("미반납".equals(status))
-							badgeClass = "bg-danger"; 
+							badgeClass = "bg-danger";
 					%>
 					<tr>
 						<td style="color: #6c757d;"><%=item.getRentalNo()%></td>
@@ -351,10 +352,10 @@ tr:hover {
 							<button class="btn-action btn-return"
 								onclick="processReturn('<%=item.getRentalNo()%>')">반납
 								처리</button> <%
-							} else {
-							%> <span style="color: #ced4da;">-</span> <%
-							}
-							%>
+ } else {
+ %> <span style="color: #ced4da;">-</span> <%
+ }
+ %>
 						</td>
 					</tr>
 					<%
@@ -364,7 +365,53 @@ tr:hover {
 				</tbody>
 			</table>
 		</div>
+		<!-- 3. 내 휴가 신청 현황 (새로 추가) -->
+		<div class="section-title">내 휴가 신청 현황</div>
+		<div class="table-wrapper">
+			<table>
+				<thead>
+					<tr>
+						<th>문서 번호</th>
+						<th>휴가 기간</th>
+						<th>사용 일수</th>
+						<th>신청 사유</th>
+						<th>결재 상태</th>
+					</tr>
+				</thead>
+				<tbody>
+					<%
+					if (leaveList == null || leaveList.isEmpty()) {
+					%>
+					<tr>
+						<td colspan="5" style="padding: 40px; color: #6c757d;">신청한 휴가
+							내역이 없습니다.</td>
+					</tr>
+					<%
+					} else {
+					for (LeaveHistoryDTO leave : leaveList) {
+						String badgeClass = "bg-warning";
+						if ("승인완료".equals(leave.getStatus()))
+							badgeClass = "bg-success";
+						else if ("반려됨".equals(leave.getStatus()))
+							badgeClass = "bg-danger";
+					%>
+					<tr>
+						<td style="color: #6c757d;"><%=leave.getLeaveNo()%></td>
+						<td><%=leave.getStartDate()%> ~ <%=leave.getEndDate()%></td>
+						<td><b><%=leave.getUseDays()%>일</b></td>
+						<td style="text-align: left; padding-left: 20px;"><%=leave.getReason()%></td>
+						<td><span class="status-badge <%=badgeClass%>"><%=leave.getStatus()%></span></td>
+					</tr>
+					<%
+					}
+					}
+					%>
+				</tbody>
+			</table>
+		</div>
 	</div>
+	</div>
+
 
 </body>
 </html>

@@ -1,49 +1,78 @@
 -- ==========================================
--- [추가] 실사용 느낌을 위한 동적 더미 데이터 삽입
+-- [시나리오 1] 회의실 예약 데이터 (상태 및 시간대별)
 -- ==========================================
 
--- 1. 회의실 예약 데이터 (과거, 현재, 취소, 미래 데이터 골고루 분포)
--- 1) 어제 진행된 회의 (이용 종료 상태용)
+-- 1) 이용 종료 건 (어제 날짜)
 INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
-VALUES (SEQ_RESERVATION.NEXTVAL, 5, '401', TRUNC(SYSDATE-1), '10:00', '12:00', '주간 부서 실적 보고', '예약완료');
+VALUES (SEQ_RESERVATION.NEXTVAL, 5, '401', TRUNC(SYSDATE-1), '10:00', '12:00', '영업팀 주간 실적 보고', '예약완료');
 
--- 2) 오늘 진행 중/예정된 회의 (예약 완료)
+-- 2) 오늘 진행 및 예정 건
 INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
-VALUES (SEQ_RESERVATION.NEXTVAL, 4, '403', TRUNC(SYSDATE), '14:00', '16:00', '신규 프로젝트 킥오프', '예약완료');
+VALUES (SEQ_RESERVATION.NEXTVAL, 4, '403', TRUNC(SYSDATE), '14:00', '16:00', '신규 프로젝트 기술 셋업 회의', '예약완료');
 
--- 3) 취소된 예약
 INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
-VALUES (SEQ_RESERVATION.NEXTVAL, 3, 'Interview1', TRUNC(SYSDATE+1), '09:00', '11:00', '경력직 1차 면접 (일정 연기)', '취소됨');
+VALUES (SEQ_RESERVATION.NEXTVAL, 3, '101', TRUNC(SYSDATE), '16:00', '17:00', '개발팀 코드 리뷰', '예약완료');
 
--- 4) 임시 선점 중인 고스트 데이터 (5분 만료 테스트용 - 어제 날짜로 강제 세팅하여 쓰레기 데이터 연출)
+-- 3) 취소된 예약 건
+INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS) 
+VALUES (SEQ_RESERVATION.NEXTVAL, 2, 'Interview1', TRUNC(SYSDATE+1), '09:00', '11:00', '인사팀 채용 면접(일정 취소)', '취소됨');
+
+-- 4) 임시 선점 중인 고스트 데이터 (타이머 테스트용: 현재 시간 기준 10분 전 데이터로 만료 연출)
 INSERT INTO RESERVATION (RES_NO, EMP_NO, ROOM_ID, RES_DATE, START_TIME, END_TIME, PURPOSE, STATUS, EXPIRE_TIME) 
-VALUES (SEQ_RESERVATION.NEXTVAL, 2, 'Meeting2', TRUNC(SYSDATE), '17:00', '18:00', '임시 선점 데이터', '임시선점', SYSDATE - 1);
+VALUES (SEQ_RESERVATION.NEXTVAL, 5, 'Meeting1', TRUNC(SYSDATE), '11:00', '12:00', '임시 선점', '임시선점', SYSDATE - INTERVAL '10' MINUTE);
 
 
--- 2. 비품 대여 기안 데이터 (5단계 결재 및 상태 시뮬레이션)
--- 1) [대여중] 최종 5단계 승인 완료 후 사용 중인 비품
+-- ==========================================
+-- [시나리오 2] 비품 대여 데이터 (5단계 결재 현황)
+-- ==========================================
+
+-- 1) [대여중] 최종 5단계 승인 완료 건 (재고 수동 차감 포함)
 INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
                             SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE)
-VALUES (SEQ_RENTAL.NEXTVAL, '신입사원 OJT용 맥북 대여', 5, 1, 2, TRUNC(SYSDATE-2), TRUNC(SYSDATE+5), '대여중', 5, 
-        '최대리', SYSDATE-2, '박과장', SYSDATE-2, '이차장', SYSDATE-2, '김대표', SYSDATE-2, '김대표', SYSDATE-1);
--- (트리거가 없으므로 수동 재고 차감)
-UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 2 WHERE EQ_NO = 1;
+VALUES (SEQ_RENTAL.NEXTVAL, '신입사원 OJT용 노트북 대여', 5, 1, 1, TRUNC(SYSDATE-2), TRUNC(SYSDATE+365), '대여중', 5, 
+        '정사원', SYSDATE-2, '정사원', SYSDATE-2, '박과장', SYSDATE-2, '이차장', SYSDATE-2, '김대표', SYSDATE-2);
+-- 실제 재고 반영 (MacBook 1대 차감)
+UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 1 WHERE EQ_NO = 1;
 
--- 2) [승인대기] 2단계(과장) 결재 대기 중인 기안 (1단계 대리만 승인함)
+-- 2) [승인대기] 현재 차장(4단계) 결재 대기 중인 건
 INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
-                            SIGN1, SIGN1_DATE)
-VALUES (SEQ_RENTAL.NEXTVAL, '디자인팀 테스트용 모니터 대여', 5, 4, 3, TRUNC(SYSDATE+1), TRUNC(SYSDATE+7), '승인대기', 2, 
-        '최대리', SYSDATE);
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE)
+VALUES (SEQ_RENTAL.NEXTVAL, '디자인 외주 작업용 타블렛 대여', 4, 9, 1, TRUNC(SYSDATE+1), TRUNC(SYSDATE+7), '승인대기', 4, 
+        '최대리', SYSDATE, '최대리', SYSDATE, '박과장', SYSDATE);
 
--- 3) [미반납] 대여 기간이 지났는데 반납하지 않은 연체 상태
+-- 3) [미반납] 대여 기간 종료 후 연체 상태 (반납완료가 아닌 대여중 상태)
 INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP, 
                             SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE)
-VALUES (SEQ_RENTAL.NEXTVAL, '외근용 보조배터리', 4, 12, 1, TRUNC(SYSDATE-10), TRUNC(SYSDATE-2), '대여중', 5, 
-        '최대리', SYSDATE-10, '박과장', SYSDATE-10, '이차장', SYSDATE-10, '김대표', SYSDATE-10, '김대표', SYSDATE-9);
-UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 1 WHERE EQ_NO = 12;
+VALUES (SEQ_RENTAL.NEXTVAL, '외근용 보조배터리 대여', 5, 12, 2, TRUNC(SYSDATE-10), TRUNC(SYSDATE-1), '대여중', 5, 
+        '정사원', SYSDATE-10, '정사원', SYSDATE-10, '박과장', SYSDATE-10, '이차장', SYSDATE-10, '김대표', SYSDATE-10);
+UPDATE EQUIPMENT SET REMAIN_COUNT = REMAIN_COUNT - 2 WHERE EQ_NO = 12;
 
--- 4) [반려됨] 1단계 결재에서 곧바로 반려된 기안
+-- 4) [반려됨] 부서장 결재에서 반려된 건
 INSERT INTO RENTAL_HISTORY (RENTAL_NO, TITLE, EMP_NO, EQ_NO, REQ_COUNT, RENTAL_DATE, RETURN_DATE, STATUS, APPROVAL_STEP)
-VALUES (SEQ_RENTAL.NEXTVAL, '사유 불분명 태블릿 요청', 5, 3, 1, TRUNC(SYSDATE), TRUNC(SYSDATE+2), '반려됨', 1);
+VALUES (SEQ_RENTAL.NEXTVAL, '무분별한 소모품 신청', 5, 10, 5, TRUNC(SYSDATE), TRUNC(SYSDATE+1), '반려됨', 1);
+
+
+-- ==========================================
+-- [시나리오 3] 휴가 신청 데이터 (연차 차감 및 도장 로직)
+-- ==========================================
+
+-- 1) [승인완료] 김대표(5단계)가 본인 휴가를 승인한 건 (연차 즉시 차감)
+INSERT INTO LEAVE_HISTORY (LEAVE_NO, EMP_NO, START_DATE, END_DATE, USE_DAYS, REASON, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE, SIGN5, SIGN5_DATE)
+VALUES (SEQ_LEAVE.NEXTVAL, 1, TRUNC(SYSDATE+20), TRUNC(SYSDATE+22), 3, '개인 리프레시 및 가족 여행', '승인완료', 5, 
+        '김대표', SYSDATE, '김대표', SYSDATE, '김대표', SYSDATE, '김대표', SYSDATE, '김대표', SYSDATE);
+-- 연차 차감 반영
+UPDATE EMPLOYEE SET CUR_LEAVE = CUR_LEAVE - 3 WHERE EMP_NO = 1;
+
+-- 2) [승인대기] 정사원이 신청하여 과장(3단계) 결재 대기 중
+INSERT INTO LEAVE_HISTORY (LEAVE_NO, EMP_NO, START_DATE, END_DATE, USE_DAYS, REASON, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE)
+VALUES (SEQ_LEAVE.NEXTVAL, 5, TRUNC(SYSDATE+5), TRUNC(SYSDATE+5), 1, '가족 경조사 참석', '승인대기', 3, '정사원', SYSDATE, '정사원', SYSDATE);
+
+-- 3) [승인대기] 이차장이 신청하여 대표(5단계) 결재 대기 중
+INSERT INTO LEAVE_HISTORY (LEAVE_NO, EMP_NO, START_DATE, END_DATE, USE_DAYS, REASON, STATUS, APPROVAL_STEP, 
+                            SIGN1, SIGN1_DATE, SIGN2, SIGN2_DATE, SIGN3, SIGN3_DATE, SIGN4, SIGN4_DATE)
+VALUES (SEQ_LEAVE.NEXTVAL, 2, TRUNC(SYSDATE+3), TRUNC(SYSDATE+4), 2, '예비군 훈련 참여', '승인대기', 5, 
+        '이차장', SYSDATE, '이차장', SYSDATE, '이차장', SYSDATE, '이차장', SYSDATE);
 
 COMMIT;

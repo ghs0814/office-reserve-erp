@@ -11,9 +11,14 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeDTO {
-	private int empNo;      // 사번
-    private String empPw;      // 비밀번호
-    private String empName;    // 이름
-    private int empLevel;      // 직급
-    private String manager;    // 관리자 여부 (Y/N)
+	private int empNo; // 사번
+	private String empPw; // 비밀번호
+	private String empName; // 이름
+	private int empLevel; // 직급
+	private String manager; // 관리자 여부 (Y/N)
+
+	// 추가 필드
+	private String dept;
+	private int maxLeave;
+	private int curLeave;
 }
