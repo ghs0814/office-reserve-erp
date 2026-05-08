@@ -24,37 +24,35 @@ public class FindPwController extends HttpServlet {
         String empNoStr = request.getParameter("empNo");
         String empName = request.getParameter("empName");
 
-        out.println("<script>");
-        
         if (empNoStr != null && empName != null) {
             try {
                 int empNo = Integer.parseInt(empNoStr);
                 
-                // 2. DAO를 통해 비밀번호 조회
+                // 2. DAO를 통해 회원 정보 존재 여부 확인
                 EmployeeDAO dao = new EmployeeDAO();
                 String foundPw = dao.findPassword(empNo, empName);
 
-                // 3. 결과에 따른 처리
                 if (foundPw != null) {
-                    // 일치하는 정보가 있으면 비밀번호를 알려주고 로그인 화면으로 보냅니다.
-                    out.println("alert('회원님의 비밀번호는 [" + foundPw + "] 입니다. 로그인 후 가급적 비밀번호를 변경해 주세요.');");
-                    out.println("location.href='index.jsp';");
+                    // 일치하는 정보가 있으면 사번을 request에 담아 새 비밀번호 폼으로 이동
+                    request.setAttribute("empNo", empNoStr);
+                    request.getRequestDispatcher("resetPw.jsp").forward(request, response);
                 } else {
-                    // 일치하는 정보가 없으면 뒤로가기
+                    out.println("<script>");
                     out.println("alert('입력하신 사번과 이름에 일치하는 정보가 없습니다.');");
                     out.println("history.back();");
+                    out.println("</script>");
                 }
             } catch (NumberFormatException e) {
+                out.println("<script>");
                 out.println("alert('사원 번호는 숫자만 입력 가능합니다.');");
                 out.println("history.back();");
+                out.println("</script>");
             }
         } else {
+            out.println("<script>");
             out.println("alert('잘못된 접근입니다.');");
             out.println("history.back();");
+            out.println("</script>");
         }
-        
-        out.println("</script>");
-        out.flush();
-        out.close();
     }
 }
