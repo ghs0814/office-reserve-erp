@@ -14,51 +14,56 @@ import com.office.dto.EmployeeDTO;
 
 @WebServlet("/changePwProcess.do")
 public class ChangePwController extends HttpServlet {
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html; charset=UTF-8");
-        PrintWriter out = response.getWriter();
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-        // 1. 로그인 세션 확인
-        HttpSession session = request.getSession();
-        EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
+		request.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html; charset=UTF-8");
+		PrintWriter out = response.getWriter();
 
-        if (loginEmp == null) {
-            out.println("<script>alert('로그인이 필요합니다.'); location.href='index.jsp';</script>");
-            return;
-        }
+		// 1. 로그인 세션 확인
+		HttpSession session = request.getSession();
+		EmployeeDTO loginEmp = (EmployeeDTO) session.getAttribute("loginEmp");
 
-        // 2. JSP 폼에서 넘어온 파라미터 받기
-        String currentPw = request.getParameter("currentPw");
-        String newPw = request.getParameter("newPw");
+		if (loginEmp == null) {
+			out.println("<script>alert('로그인이 필요합니다.'); location.href='index.jsp';</script>");
+			return;
+		}
 
-        out.println("<script>");
-        
-        // 3. 현재 비밀번호가 맞는지 검증 (DB에 있는 비밀번호와 입력한 현재 비밀번호 비교)
-        if (!loginEmp.getEmpPw().equals(currentPw)) {
-            out.println("alert('현재 비밀번호가 일치하지 않습니다.');");
-            out.println("history.back();");
-        } else {
-            // 4. 비밀번호가 맞다면 DAO를 호출하여 새 비밀번호로 업데이트
-            EmployeeDAO dao = new EmployeeDAO();
-            boolean isSuccess = dao.updatePassword(loginEmp.getEmpNo(), newPw);
+		// 2. JSP 폼에서 넘어온 파라미터 받기
+		String currentPw = request.getParameter("currentPw");
+		String newPw = request.getParameter("newPw");
 
-            if (isSuccess) {
-                // 5. 성공 시 세션을 날리고(로그아웃) 다시 로그인하도록 유도
-                session.invalidate();
-                out.println("alert('비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.');");
-                out.println("location.href='index.jsp';"); 
-            } else {
-                out.println("alert('비밀번호 변경 중 오류가 발생했습니다.');");
-                out.println("history.back();");
-            }
-        }
-        
-        out.println("</script>");
-        out.flush();
-        out.close();
-    }
+		out.println("<script>");
+
+		EmployeeDAO dao = new EmployeeDAO();
+
+		// ★ 수정된 부분: 세션 비밀번호 대신, DB에 직접 로그인 체크 로직을 돌려 현재 비밀번호 검증
+		EmployeeDTO checkEmp = dao.loginCheck(String.valueOf(loginEmp.getEmpNo()), currentPw);
+
+		if (checkEmp == null) {
+			// 비밀번호가 틀렸을 경우
+			out.println("alert('현재 비밀번호가 일치하지 않습니다.');");
+			out.println("history.back();");
+		} else {
+			// 비밀번호가 맞았을 경우 -> 업데이트 로직 실행
+			// (참고: DAO에 만들어두신 비밀번호 업데이트 메서드명에 맞게 사용하세요)
+			boolean isSuccess = dao.updateEmployeePassword(String.valueOf(loginEmp.getEmpNo()), newPw);
+
+			if (isSuccess) {
+				session.invalidate();
+				out.println("alert('비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.');");
+				out.println("location.href='index.jsp';");
+			} else {
+				out.println("alert('비밀번호 변경에 실패했습니다.');");
+				out.println("history.back();");
+			}
+		}
+
+		out.println("</script>");
+		out.flush();
+		out.close();
+	}
 }
