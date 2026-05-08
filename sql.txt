@@ -3,7 +3,8 @@
 -- ==========================================
 DROP SEQUENCE SEQ_RESERVATION;
 DROP SEQUENCE SEQ_RENTAL;
-DROP SEQUENCE SEQ_LEAVE; -- 휴가 시퀀스 추가
+DROP SEQUENCE SEQ_LEAVE; 
+
 
 DROP TABLE RENTAL_HISTORY CASCADE CONSTRAINTS;
 DROP TABLE LEAVE_HISTORY CASCADE CONSTRAINTS; -- 휴가 테이블 추가
@@ -17,11 +18,15 @@ DROP TABLE EMPLOYEE CASCADE CONSTRAINTS;
 -- ==========================================
 -- 예약 번호 생성용 시퀀스
 CREATE SEQUENCE SEQ_RESERVATION START WITH 1 INCREMENT BY 1;
-
 -- 비품 대여 번호 생성용 시퀀스
 CREATE SEQUENCE SEQ_RENTAL START WITH 1 INCREMENT BY 1;
 -- 휴가 신청 번호 생성용 시퀀스
 CREATE SEQUENCE SEQ_LEAVE START WITH 1 INCREMENT BY 1;
+-- 비품 번호 자동 생성용 시퀀스
+-- 더미 데이터와 겹치지 않게 100번부터 시작하도록 설정합니다.
+DROP SEQUENCE SEQ_EQUIPMENT;
+CREATE SEQUENCE SEQ_EQUIPMENT START WITH 100 INCREMENT BY 1;
+
 
 -- ==========================================
 -- 2. 테이블 생성 (DTO 기준 최신화 완료)

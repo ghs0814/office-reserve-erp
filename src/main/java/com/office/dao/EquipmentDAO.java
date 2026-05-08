@@ -51,14 +51,43 @@ public class EquipmentDAO {
 	/**
 	 * 신규 비품 등록: 현재 비품 번호 중 최대값에 +1을 하여 자동으로 새 번호를 부여하고 등록합니다.
 	 */
+//	public boolean insertEquipment(EquipmentDTO dto) {
+//		boolean result = false;
+//		Connection conn = null;
+//		PreparedStatement pstmt = null;
+//
+//		// NVL과 MAX를 활용하여 수동으로 시퀀스 효과를 낸 쿼리
+//		String sql = "INSERT INTO EQUIPMENT (EQ_NO, EQ_NAME, TOTAL_COUNT, REMAIN_COUNT) "
+//				+ "VALUES ((SELECT NVL(MAX(EQ_NO), 0) + 1 FROM EQUIPMENT), ?, ?, ?)";
+//
+//		try {
+//			conn = DBConnection.getConnection();
+//			if (conn != null) {
+//				pstmt = conn.prepareStatement(sql);
+//				pstmt.setString(1, dto.getEqName());
+//				pstmt.setInt(2, dto.getTotalCount());
+//				// 신규 등록 시 총 수량과 잔여 수량은 동일하게 세팅합니다.
+//				pstmt.setInt(3, dto.getTotalCount());
+//
+//				int count = pstmt.executeUpdate();
+//				if (count > 0) result = true;
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		} finally {
+//			closeResource(conn, pstmt, null);
+//		}
+//		return result;
+//	}
+	// SQL 쿼리에서 번호를 계산하던 서브쿼리를 시퀀스로 교체
 	public boolean insertEquipment(EquipmentDTO dto) {
 		boolean result = false;
 		Connection conn = null;
 		PreparedStatement pstmt = null;
 
-		// NVL과 MAX를 활용하여 수동으로 시퀀스 효과를 낸 쿼리
+		// ★ 수정됨: NVL(MAX...) 대신 시퀀스(SEQ_EQUIPMENT.NEXTVAL) 사용
 		String sql = "INSERT INTO EQUIPMENT (EQ_NO, EQ_NAME, TOTAL_COUNT, REMAIN_COUNT) "
-				+ "VALUES ((SELECT NVL(MAX(EQ_NO), 0) + 1 FROM EQUIPMENT), ?, ?, ?)";
+				+ "VALUES (SEQ_EQUIPMENT.NEXTVAL, ?, ?, ?)";
 
 		try {
 			conn = DBConnection.getConnection();
@@ -66,11 +95,11 @@ public class EquipmentDAO {
 				pstmt = conn.prepareStatement(sql);
 				pstmt.setString(1, dto.getEqName());
 				pstmt.setInt(2, dto.getTotalCount());
-				// 신규 등록 시 총 수량과 잔여 수량은 동일하게 세팅합니다.
-				pstmt.setInt(3, dto.getTotalCount());
+				pstmt.setInt(3, dto.getTotalCount()); // 초기 등록 시 잔여량 = 총수량
 
 				int count = pstmt.executeUpdate();
-				if (count > 0) result = true;
+				if (count > 0)
+					result = true;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -100,7 +129,8 @@ public class EquipmentDAO {
 				pstmt.setInt(4, dto.getEqNo());
 
 				int count = pstmt.executeUpdate();
-				if (count > 0) result = true;
+				if (count > 0)
+					result = true;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -127,7 +157,8 @@ public class EquipmentDAO {
 				pstmt.setInt(1, eqNo);
 
 				int count = pstmt.executeUpdate();
-				if (count > 0) result = true;
+				if (count > 0)
+					result = true;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -140,46 +171,49 @@ public class EquipmentDAO {
 	/**
 	 * 특정 비품 상세 조회: 대여 폼 등에서 선택한 비품 1개의 상세 정보를 가져올 때 사용합니다.
 	 */
-    public EquipmentDTO getEquipmentDetail(int eqNo) {
-        EquipmentDTO dto = null;
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+	public EquipmentDTO getEquipmentDetail(int eqNo) {
+		EquipmentDTO dto = null;
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
 
-        String sql = "SELECT * FROM EQUIPMENT WHERE EQ_NO = ?";
+		String sql = "SELECT * FROM EQUIPMENT WHERE EQ_NO = ?";
 
-        try {
-            conn = DBConnection.getConnection();
-            if (conn != null) {
-                pstmt = conn.prepareStatement(sql);
-                pstmt.setInt(1, eqNo);
-                
-                rs = pstmt.executeQuery();
-                
-                if (rs.next()) {
-                    dto = new EquipmentDTO();
-                    dto.setEqNo(rs.getInt("EQ_NO"));
-                    dto.setEqName(rs.getString("EQ_NAME"));
-                    dto.setTotalCount(rs.getInt("TOTAL_COUNT"));
-                    dto.setRemainCount(rs.getInt("REMAIN_COUNT"));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeResource(conn, pstmt, rs);
-        }
-        return dto;
-    }
+		try {
+			conn = DBConnection.getConnection();
+			if (conn != null) {
+				pstmt = conn.prepareStatement(sql);
+				pstmt.setInt(1, eqNo);
+
+				rs = pstmt.executeQuery();
+
+				if (rs.next()) {
+					dto = new EquipmentDTO();
+					dto.setEqNo(rs.getInt("EQ_NO"));
+					dto.setEqName(rs.getString("EQ_NAME"));
+					dto.setTotalCount(rs.getInt("TOTAL_COUNT"));
+					dto.setRemainCount(rs.getInt("REMAIN_COUNT"));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			closeResource(conn, pstmt, rs);
+		}
+		return dto;
+	}
 
 	/**
 	 * 자원 해제 공통 메서드입니다.
 	 */
 	private void closeResource(Connection conn, PreparedStatement pstmt, ResultSet rs) {
 		try {
-			if (rs != null) rs.close();
-			if (pstmt != null) pstmt.close();
-			if (conn != null) conn.close();
+			if (rs != null)
+				rs.close();
+			if (pstmt != null)
+				pstmt.close();
+			if (conn != null)
+				conn.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
