@@ -2,7 +2,7 @@
 java 8
 tomcat 9 // https://tomcat.apache.org/download-90.cgi - core - zip
 oracle 11g // com.office.util-DBConnection - oracle 코드 사용 확인, 오라클 대신 h2 사용할 경우에는 오라클 설치 필요 x
-lombok jar 검색 후 설치(jar 실행 후, eclipse web developer 폴더 선택)
+lombok jar 검색 후 설치(jar 실행 후, eclipse web developer 폴더 선택) // https://projectlombok.org/download
 이클립스 https://www.eclipse.org/downloads/packages/release/2021-06/r for web developsers
 
 eclipse - file - import - General - Existing projects - select archive file - zip select
