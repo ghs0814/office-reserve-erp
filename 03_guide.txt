@@ -7,6 +7,7 @@ lombok jar 검색 후 설치(jar 실행 후, eclipse web developer 폴더 선택
 
 eclipse - file - import - General - Existing projects - select archive file - zip select
 
+언어설정 - workspace에서 default ms949로 유지
 (ngrok 서버 접속 주소 https://unwatched-amnesty-variety.ngrok-free.dev/OfficeReverseERP/) 
 //열고 있을 때만 가능
 
