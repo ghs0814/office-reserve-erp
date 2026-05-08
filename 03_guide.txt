@@ -6,6 +6,9 @@ lombok jar 검색 후 설치(eclipse web developer 폴더 내부)
 
 eclipse - file - import - General - Existing projects - select archive file - zip select
 
+(ngrok 서버 접속 주소 https://unwatched-amnesty-variety.ngrok-free.dev/OfficeReverseERP/) 
+//열고 있을 때만 가능
+
 <<오류 수정 후 refresh 시도>>
 프로젝트명 - refresh
 하단 중앙 서버 - tomcat 우클릭 - clean
